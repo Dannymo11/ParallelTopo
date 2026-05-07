@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDEs / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# JAX / CUDA traces
+*.pb.gz
+*.hlo
+xla_dump/
+jax_compilation_cache/
+
+# Generated benchmark / profiling outputs (keep directories via .gitkeep)
+results/bench/*.json
+results/bench/*.csv
+results/profiling/*.csv
+results/profiling/*.svg
+results/profiling/*.prof
+results/figures/*.png
+results/figures/*.pdf
+
+# Local experiment scratch
+scratch/
+*.tmp

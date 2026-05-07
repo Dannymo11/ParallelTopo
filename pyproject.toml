@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "topograph"
+version = "0.0.1"
+description = "Batched GPU simulation for graph-structured RL with variable topology (CS348K)."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Danny Mo" }]
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.12",
+    "networkx>=3.2",  # only for cross-checking exact APSP in tests
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+]
+# JAX deps land here in M2; deliberately not pinned until then so we don't
+# fight CUDA versions before we need to.
+gpu = []
+
+[project.scripts]
+topograph-bench = "topograph.bench.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/topograph"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+filterwarnings = ["error"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "NPY"]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.ruff.format]
+quote-style = "double"
