@@ -5,10 +5,9 @@ with **variable topology**. CS348K final project, Spring 2026.
 
 ## What this is
 
-A systems study, not an RL paper. Existing batched simulators (Madrona, Brax,
-Isaac Gym) assume fixed environment topology. This project asks whether the
-same playbook — GPU-resident state, per-environment masking, vmap'd dynamics —
-extends to environments where each environment in the batch is *building a
+Existing batched simulators (Madrona, Brax, Isaac Gym) assume fixed environment topology. 
+This project asks whether the same playbook of a GPU-resident state, per-environment masking. 
+and vmap'd dynamics, extends to environments where each environment in the batch is *building a
 different graph* over the course of an episode.
 
 Concrete workload: a slim transit-network construction simulator on synthetic
@@ -20,8 +19,8 @@ function computed over batched approximate all-pairs shortest paths.
 
 ```
 src/topograph/
-  sim_cpu/      # NumPy/SciPy CPU baseline (M1)
-  sim_gpu/      # JAX batched simulator    (M3)
+  sim_cpu/      # NumPy/SciPy CPU baseline 
+  sim_gpu/      # JAX batched simulator    
   bench/        # rollouts/sec benchmark harness
   policies/     # random / greedy / learned
 tests/          # sanity + numerical-equivalence
