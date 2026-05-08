@@ -229,3 +229,22 @@ def valid_action_mask(state: State) -> NDArray[np.bool_]:
     mask[:n_candidate] = (~state.edge_mask) & affordable
     mask[n_candidate] = True  # no-op is always legal
     return mask
+
+
+def find_edge_index(world: WorldConfig, a: int, b: int) -> int:
+    """Return the index of edge (a, b) in `world.candidate_edges`.
+
+    Lookup is undirected: ``find_edge_index(w, a, b) == find_edge_index(w, b, a)``.
+    Raises ``KeyError`` if the pair is not in the candidate set (e.g., the
+    zones are too far apart under the k-nearest construction).
+
+    Used by scripted policies and tests that need to refer to specific edges
+    by their endpoint zones rather than by candidate index.
+    """
+    lo, hi = (a, b) if a < b else (b, a)
+    matches = np.where(
+        (world.candidate_edges[:, 0] == lo) & (world.candidate_edges[:, 1] == hi)
+    )[0]
+    if matches.size == 0:
+        raise KeyError(f"edge ({a}, {b}) not in candidate set")
+    return int(matches[0])

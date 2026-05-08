@@ -193,6 +193,18 @@ def test_run_episode_random_policy_varies_with_seed(world: WorldConfig) -> None:
     assert not np.array_equal(a.actions, b.actions)
 
 
+def test_no_op_rollout_preserves_budget(world: WorldConfig) -> None:
+    """A pure no-op trajectory must not spend any budget.
+
+    This is a *contract* invariant — it holds on both the step-2 stub
+    and any real `step` implementation, because the no-op action is
+    defined as "do nothing this step." Lives here, not in test_sanity,
+    so it's enforced regardless of whether dynamics have landed.
+    """
+    traj = run_episode(reset(world), _no_op_policy, rng=0)
+    assert traj.final_state.budget_remaining == pytest.approx(world.initial_budget)
+
+
 # ---------------------------------------------------------------------------
 # valid_action_mask
 # ---------------------------------------------------------------------------
