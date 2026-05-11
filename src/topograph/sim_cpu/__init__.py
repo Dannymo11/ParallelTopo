@@ -16,6 +16,14 @@ from .api import (
     step,
     valid_action_mask,
 )
+from .dynamics import (
+    apply_action,
+    compute_accessibility,
+    compute_demand,
+    compute_travel_times,
+    compute_welfare,
+    update_activity,
+)
 from .types import Action, GridCityConfig, State, Trajectory, WorldConfig
 
 __all__ = [
@@ -25,10 +33,16 @@ __all__ = [
     "State",
     "Trajectory",
     "WorldConfig",
+    "apply_action",
+    "compute_accessibility",
+    "compute_demand",
+    "compute_travel_times",
+    "compute_welfare",
     "find_edge_index",
     "make_world",
     "reset",
     "run_episode",
     "step",
+    "update_activity",
     "valid_action_mask",
 ]

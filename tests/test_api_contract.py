@@ -115,8 +115,11 @@ def test_step_advances_counter(world: WorldConfig) -> None:
     s2, r, done, info = step(s, world.no_op_action)
     assert s2.step == 1
     assert done is False
-    assert r == 0.0
-    assert info.get("stub") is True
+    # No-op against the walking-only network still gives a real welfare
+    # number — it's not "no reward", it's "the floor reward."
+    assert r >= 0.0
+    # Real dynamics expose did_activate (False for no-op).
+    assert info["did_activate"] is False
 
 
 def test_step_terminates_at_horizon(world: WorldConfig) -> None:

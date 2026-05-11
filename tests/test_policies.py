@@ -112,23 +112,17 @@ def test_greedy_policy_is_deterministic(world: WorldConfig) -> None:
     np.testing.assert_array_equal(a, b)
 
 
-def test_greedy_picks_lowest_index_tie_break(world: WorldConfig) -> None:
-    """Under the step-2 stub, every action returns reward 0.
-
-    Greedy uses strict ``>`` comparison, so among tied legal actions it
-    picks the *first* one iterated. Combined with the stub's frozen
-    edge_mask / budget (no state changes step-to-step), the same lowest
-    legal action is selected every step.
-
-    Once task #8 lands real dynamics this test will need updating — by
-    then ties will be much rarer and the lowest-index path won't be the
-    interesting one. The test stays as a stub-era regression for now.
+def test_greedy_makes_non_trivial_choices(world: WorldConfig) -> None:
+    """Under real dynamics each candidate edge yields a different
+    immediate reward, so a one-step-greedy policy should select at least
+    two distinct actions across an episode. If it doesn't, the lookahead
+    is doing nothing useful — either the reward landscape is degenerate
+    or the legal-action mask isn't being respected.
     """
     policy = OneStepGreedyPolicy()
     traj = run_episode(reset(world), policy, rng=0)
-    # Under stub dynamics every step has the same legal set, so greedy
-    # picks the same lowest legal index each time.
-    assert (traj.actions == traj.actions[0]).all()
+    distinct_actions = len({int(a) for a in traj.actions})
+    assert distinct_actions >= 2
 
 
 # ---------------------------------------------------------------------------

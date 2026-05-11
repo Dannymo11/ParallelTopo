@@ -18,12 +18,19 @@ Why a stub instead of leaving `step` empty:
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import replace
 from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
 
+from .dynamics import (
+    apply_action,
+    compute_accessibility,
+    compute_demand,
+    compute_travel_times,
+    compute_welfare,
+    update_activity,
+)
 from .types import Action, GridCityConfig, State, Trajectory, WorldConfig
 
 # A policy is a pure callable that maps (state, rng) to an action index. We
@@ -131,22 +138,23 @@ def reset(world: WorldConfig) -> State:
 
 
 def step(state: State, action: Action) -> tuple[State, float, bool, dict[str, Any]]:
-    """Advance the simulation by one step.
+    """Advance the simulation by one step under the full M1 dynamics.
 
-    **STUB IMPLEMENTATION (M1, task #2).** Real dynamics — gravity demand,
-    APSP, accessibility, land-use growth, action-aware reward — land in
-    task #8. For now, the stub:
+    Composition:
 
-    * Validates the action is in range.
-    * Records that `action != no_op` would *attempt* to activate the edge,
-      but does not actually mutate the edge mask, deduct budget, or compute
-      reward. (No mutation here matches the "trivial baseline" framing —
-      anything else risks the sanity tests passing on the stub when they
-      shouldn't.)
-    * Increments the step counter and sets `done=True` at the horizon.
-    * Returns a zero reward and an info dict marking the result as a stub.
+      1. apply_action          — mutate edge_mask, budget under the action.
+      2. compute_travel_times  — APSP under the (possibly updated) network.
+      3. compute_accessibility — exp-decay kernel @ activity.
+      4. update_activity       — multiplicative growth toward higher-acc zones,
+                                 renormalized so the total population is preserved.
+      5. compute_welfare       — population-weighted average accessibility,
+                                 used as the reward.
+      6. compute_demand        — informational gravity demand (placed in `info`).
 
-    Returns ``(next_state, reward, done, info)``.
+    Returns ``(next_state, reward, done, info)``. The ``info`` dict carries
+    the per-step travel-times, accessibility, and demand matrices for
+    downstream visualization and the M5 ablations; it is not part of the
+    state contract.
     """
     if not (0 <= action <= state.world.no_op_action):
         raise ValueError(
@@ -155,15 +163,43 @@ def step(state: State, action: Action) -> tuple[State, float, bool, dict[str, An
     if state.done:
         raise RuntimeError("step called on a terminated state")
 
+    # 1. Action -> updated mask + budget (silent no-op for illegal-but-in-range).
+    new_mask, new_budget, did_activate = apply_action(state, action)
+
+    # 2-3. APSP and accessibility under the (possibly updated) network.
+    travel_times = compute_travel_times(state.world, new_mask)
+    accessibility = compute_accessibility(state.world, state.activity, travel_times)
+
+    # 4. Activity grows toward higher-access zones.
+    new_activity = update_activity(
+        state.activity, accessibility, state.world.growth_rate
+    )
+
+    # 5. Reward = population-weighted accessibility under the network and the
+    #    *post-growth* activity. The pre-growth accessibility kernel is reused
+    #    (same travel_times) so the only extra work is one matrix-vector multiply.
+    final_acc = compute_accessibility(state.world, new_activity, travel_times)
+    reward = compute_welfare(new_activity, final_acc)
+
+    # 6. Demand surfaced for info / future ridership reward.
+    demand = compute_demand(state.world, new_activity, travel_times)
+
     next_step = state.step + 1
     next_done = next_step >= state.world.horizon
 
-    next_state = replace(state, step=next_step, done=next_done)
-    reward = 0.0
+    next_state = State(
+        world=state.world,
+        edge_mask=new_mask,
+        activity=new_activity,
+        budget_remaining=new_budget,
+        step=next_step,
+        done=next_done,
+    )
     info: dict[str, Any] = {
-        "stub": True,
-        "action_received": int(action),
-        "is_no_op": int(action == state.world.no_op_action),
+        "did_activate": did_activate,
+        "travel_times": travel_times,
+        "accessibility": final_acc,
+        "demand": demand,
     }
     return next_state, reward, next_done, info
 

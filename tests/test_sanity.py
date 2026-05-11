@@ -1,12 +1,11 @@
 """Sanity tests for the CPU simulator dynamics.
 
-These tests are **deliberately RED on the step-2 no-op stub.** They become
-GREEN when task #8 lands real dynamics. Concretely they test:
+Trajectory-level sanity tests that distinguish "simulator wired up
+correctly" from "simulator returns zero / nonsense on every input." Each
+test exercises a different aspect of the dynamics:
 
 1. *Walking-only floor.* A no-op rollout still produces non-zero return,
-   because walking accessibility itself contributes welfare. A simulator
-   that always returns zero reward — exactly what the stub does — fails
-   this test, which is the desired signal.
+   because walking accessibility itself contributes welfare.
 
 2. *Edges help.* A hand-built corridor of transit edges along the central
    row strictly improves return over a no-op rollout on the same world.
@@ -17,16 +16,15 @@ GREEN when task #8 lands real dynamics. Concretely they test:
    enough signal that a trivial heuristic can find better edges than
    noise.
 
-These are *trajectory-level* sanity tests, not unit tests of any specific
-component (those will live in `test_dynamics.py` once dynamics land). The
-philosophy: even if every individual computation in the simulator is wrong
-in some compensating way, getting all three of these to pass implies the
-simulator is at least directionally correct.
+These are deliberately *trajectory-level*: even if every individual
+computation in the simulator is wrong in some compensating way, getting
+all three to pass implies the simulator is at least directionally
+correct. Per-component correctness lives in `test_dynamics.py`.
 
-Why the tests are checked in BEFORE the implementation: this is the
-checkpoint's "evaluation code that runs and can definitively say 'empty
-images / white noise / zero reward' is not successful" requirement,
-literally.
+History: these tests were originally checked in red (xfail-strict) at
+step 3, before dynamics existed, to satisfy the CS348K checkpoint's
+"evaluation code that can reject empty / white-noise outputs" requirement.
+They turned green at step 8 when dynamics landed.
 """
 
 from __future__ import annotations
@@ -46,14 +44,6 @@ from topograph.sim_cpu import (
     make_world,
     reset,
     run_episode,
-)
-
-# Sanity tests are expected to fail until task #8 lands. Mark the whole
-# module so `pytest` reports them as XFAIL rather than FAILED — the suite
-# still runs cleanly while the implementation is in flight.
-pytestmark = pytest.mark.xfail(
-    reason="Sanity tests are RED on the step-2 stub; task #8 turns them GREEN.",
-    strict=True,
 )
 
 
