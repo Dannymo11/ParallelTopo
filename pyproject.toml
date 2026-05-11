@@ -25,9 +25,15 @@ dev = [
 # JAX deps land here in M2; deliberately not pinned until then so we don't
 # fight CUDA versions before we need to.
 gpu = []
+# Optional: matplotlib for the profiling breakdown bar chart. CSV and JSON
+# are always written; the PNG is a nice-to-have for the checkpoint writeup.
+figures = [
+    "matplotlib>=3.8",
+]
 
 [project.scripts]
 topograph-bench = "topograph.bench.__main__:main"
+topograph-profile = "topograph.bench.profiling:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/topograph"]

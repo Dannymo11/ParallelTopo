@@ -10,6 +10,17 @@ Public surface:
   ``results/bench/`` writes.
 """
 
+from .profiling import (
+    COMPONENTS,
+    PROFILE_SCHEMA_VERSION,
+    ProfileConfig,
+    default_output_stem,
+    format_breakdown,
+    run_profile,
+    step_profiled,
+    write_csv,
+    write_figure,
+)
 from .runner import (
     SCHEMA_VERSION,
     BenchConfig,
@@ -20,10 +31,19 @@ from .runner import (
 )
 
 __all__ = [
+    "COMPONENTS",
+    "PROFILE_SCHEMA_VERSION",
     "SCHEMA_VERSION",
     "BenchConfig",
+    "ProfileConfig",
     "default_output_filename",
+    "default_output_stem",
+    "format_breakdown",
     "format_summary",
     "make_policy",
     "run_benchmark",
+    "run_profile",
+    "step_profiled",
+    "write_csv",
+    "write_figure",
 ]
