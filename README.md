@@ -17,8 +17,7 @@ function computed over batched approximate all-pairs shortest paths.
 
 ## Project questions
 
-This is a *visual computing systems* paper, not an RL paper. Three questions
-anchor the work — each tied to a quantitative success gate.
+Three questionsanchor the work, each tied to a quantitative success gate.
 
 **RQ1 — Feasibility.** *Can a graph-structured RL environment with variable
 topology be efficiently batched on a single GPU using approximate batched APSP
@@ -70,11 +69,10 @@ source .venv/bin/activate
 uv pip install -e ".[dev,figures]"
 ```
 
-## M1 checkpoint status
+## Checkpoint status
 
 The CPU baseline is implemented and the evaluation harness produces real
-numbers — exactly the "evaluation code running on a trivial baseline"
-artifact the CS348K checkpoint asks for.
+numbers.
 
 **Throughput floor** (10×10 grid, horizon 15, random policy, 200 episodes):
 
@@ -96,10 +94,7 @@ artifact the CS348K checkpoint asks for.
 | `compute_welfare` | 2.0 | 0.2% |
 | `bookkeeping` + `apply_action` | 1.7 | 0.2% |
 
-APSP is decisively the hot spot. The M2 batched-APSP feasibility study is
-targeting the right component — there is no other single piece whose
-vectorization would meaningfully change the throughput picture at this
-grid size.
+APSP is decisively the hot spot.
 
 **Sanity tests** distinguish "simulator wired up" from "simulator returns
 zero on every input":
@@ -114,11 +109,6 @@ zero on every input":
 73 tests in total; all passing.
 
 ## Planned experiments
-
-The M5 matrix becomes the figures in the final writeup. Listed here so the
-checkpoint is explicit about what we're aiming at — none of these have
-been run yet beyond the M1 throughput-floor and time-breakdown numbers
-above.
 
 1. **Throughput vs. batch size sweep.** Rollouts/sec at batch sizes
    {1, 16, 64, 256, 1024, 4096} on a fixed 10×10 grid. Both simulator-only
@@ -156,10 +146,6 @@ python -m topograph.bench.profiling \
     --grid 10 --horizon 15 --episodes 100 --warmup 5
 # Writes: results/profiling/cpu_breakdown_random_10x10_h15_<ts>.{json,csv,png}
 ```
-
-All output filenames embed config and timestamp so reruns don't clobber
-prior results. The `figures` optional dep group installs matplotlib for
-the profile bar chart; without it, the CSV and JSON are still produced.
 
 ## Milestones
 
