@@ -10,17 +10,6 @@ Public surface:
   ``results/bench/`` writes.
 """
 
-from .profiling import (
-    COMPONENTS,
-    PROFILE_SCHEMA_VERSION,
-    ProfileConfig,
-    default_output_stem,
-    format_breakdown,
-    run_profile,
-    step_profiled,
-    write_csv,
-    write_figure,
-)
 from .runner import (
     SCHEMA_VERSION,
     BenchConfig,
@@ -30,20 +19,18 @@ from .runner import (
     run_benchmark,
 )
 
+# Note: profiling symbols (ProfileConfig, run_profile, step_profiled, ...)
+# are NOT re-exported here. Importing them via `topograph.bench` would
+# trigger an eager import of `topograph.bench.profiling`, which then
+# breaks `python -m topograph.bench.profiling` with a RuntimeWarning
+# about the module being in sys.modules before its own execution. Import
+# them from `topograph.bench.profiling` directly instead.
+
 __all__ = [
-    "COMPONENTS",
-    "PROFILE_SCHEMA_VERSION",
     "SCHEMA_VERSION",
     "BenchConfig",
-    "ProfileConfig",
     "default_output_filename",
-    "default_output_stem",
-    "format_breakdown",
     "format_summary",
     "make_policy",
     "run_benchmark",
-    "run_profile",
-    "step_profiled",
-    "write_csv",
-    "write_figure",
 ]

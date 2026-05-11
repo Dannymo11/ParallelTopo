@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from topograph.bench import (
+from topograph.bench.profiling import (
     COMPONENTS,
     PROFILE_SCHEMA_VERSION,
     ProfileConfig,

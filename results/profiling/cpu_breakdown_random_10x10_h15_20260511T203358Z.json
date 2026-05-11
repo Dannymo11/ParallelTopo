@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "kind": "topograph_profile",
+  "timestamp": "2026-05-11T20:33:58+00:00",
+  "config": {
+    "grid_shape": [
+      10,
+      10
+    ],
+    "horizon": 15,
+    "candidate_k_nearest": 8,
+    "initial_budget": 50.0,
+    "policy": "random",
+    "n_episodes": 100,
+    "warmup_episodes": 5,
+    "world_seed": 0,
+    "rng_seed": 0
+  },
+  "world_info": {
+    "n_zones": 100,
+    "n_candidate_edges": 426,
+    "action_dim": 427
+  },
+  "system_info": {
+    "python": "3.10.12",
+    "numpy": "2.2.6",
+    "platform": "Linux-6.8.0-106-generic-aarch64-with-glibc2.35",
+    "machine": "aarch64"
+  },
+  "total_steps": 1500,
+  "wall_clock_total_s": 1.5068113759916741,
+  "component_total_s": 1.4860229372279719,
+  "policy_total_s": 0.015271612181095406,
+  "components": {
+    "apply_action": {
+      "total_s": 0.0012660693319048733,
+      "mean_us_per_step": 0.8440462212699155,
+      "fraction": 0.0008519850536537477
+    },
+    "compute_travel_times": {
+      "total_s": 1.2759748917160323,
+      "mean_us_per_step": 850.6499278106882,
+      "fraction": 0.8586508725741722
+    },
+    "compute_accessibility_pre": {
+      "total_s": 0.04253026114020031,
+      "mean_us_per_step": 28.353507426800206,
+      "fraction": 0.028620191569543527
+    },
+    "update_activity": {
+      "total_s": 0.014602288298192434,
+      "mean_us_per_step": 9.734858865461621,
+      "fraction": 0.00982642187571583
+    },
+    "compute_accessibility_post": {
+      "total_s": 0.040523033938370645,
+      "mean_us_per_step": 27.015355958913766,
+      "fraction": 0.02726945387125877
+    },
+    "compute_welfare": {
+      "total_s": 0.0030310459405882284,
+      "mean_us_per_step": 2.0206972937254855,
+      "fraction": 0.002039703334756288
+    },
+    "compute_demand": {
+      "total_s": 0.10663369494432118,
+      "mean_us_per_step": 71.08912996288079,
+      "fraction": 0.07175777188421852
+    },
+    "bookkeeping": {
+      "total_s": 0.0014616519183618948,
+      "mean_us_per_step": 0.9744346122412633,
+      "fraction": 0.0009835998366811627
+    }
+  }
+}
