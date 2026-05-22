@@ -120,6 +120,101 @@ zero on every input":
 
 73 tests in total; all passing.
 
+## Checkpoint 2 — Batched APSP feasibility (2026-05-22)
+
+The make-or-break technical risk for the whole project — whether batched
+shortest paths can be vectorized across environments with *different*
+active edge sets at acceptable accuracy — landed decisively today. The
+throughput half of the M2 gate is wired and correctness-tested but
+requires a GPU run to verdict; that run is scheduled this weekend.
+
+### Evaluation framework
+
+The four figures the writeup will contain, with current status:
+
+| # | Figure | Status | What it shows |
+|---|---|---|---|
+| 1 | Throughput vs. batch size on fixed grid | **partial** | Rollouts/sec at batch {1, 16, 64, 256, 1024} on 10×10/horizon-15 reference workload. CPU JAX baseline ran end-to-end (smoke test passed); GPU verdict pending. CPU baseline (scipy FW @ 117.8 rollouts/sec) as horizontal line. |
+| 2 | Throughput vs. graph size at fixed batch | **stub** | Fix batch at sweet spot from Fig 1; vary N over {25, 100, 225, 400}. Identifies where the approach breaks down (memory, APSP cost). |
+| 3 | Where-does-time-go per-component breakdown | **partial** | Per-component step time at one operating point. CPU figure ready (`results/profiling/cpu_breakdown_*.png`). GPU breakdown produced after M3 lands. |
+| 4 | Variable-topology overhead vs. fixed-topology | **stub** | Re-run the simulator with the edge mask frozen at episode start; report overhead percentage at matched batch and graph size. Contribution-distinguishing experiment vs. Madrona / Brax / Isaac Gym. |
+
+### What's been answered (real intermediate results)
+
+**M2 accuracy gate — passed cleanly (today).** Across a sweep of 3 grid
+shapes × 5 mask densities × 3 seeds × 2 candidate algorithms × 7 K values
+(630 cells total), the worst mean relative error at the M2-targeted K is
+**0.003%**. At convergence-K the vast majority of cells are bit-identical
+to scipy FW. Algorithm choice for M3: matrix-squaring (`D ← min(D, D ⊕ D)`)
+over Bellman-Ford-style (`D ← min(D, D ⊕ A)`) — same answer, ~4× fewer
+iterations. Reproduction: `python scripts/batched_apsp_accuracy.py`;
+results: `results/m2_apsp_accuracy/m2_accuracy_20260522T212737Z.json`.
+
+| Grid | First fully-converged K (Bellman-Ford) | First fully-converged K (matrix-squaring) |
+|---|---:|---:|
+| 5×5 | 4 | 3 |
+| 10×10 | 16 | 4 |
+| 15×15 | 16 | 4 |
+
+K=5 is the recommended single value across all M1-spec grid sizes (one
+safety iteration past the empirical convergence point; 2⁵ = 32 hops
+covers the ≤28-hop walking-floor diameter of a 15×15 grid with margin).
+
+**Writeup framing shift the accuracy data supports.** At K=5 on M1-spec
+grids the relaxation produces *exact* shortest paths, not approximate
+ones — the walking floor bounds the hop-diameter low enough that
+fixed-iteration matrix-squaring converges to bit-identical scipy-FW
+output. The contribution reframes from "approximate batched APSP with
+bounded error" to "**exact** batched APSP via fixed-iteration min-plus
+matrix-squaring, with K chosen from graph diameter." Stronger story —
+no accuracy/throughput trade-off curve to defend, just a fixed O(log D)
+compute cost per step.
+
+**JAX kernel correctness — smoke test passed.** The `apsp_batched`
+kernel runs end-to-end under `jax.jit` + `jax.vmap` at all
+laptop-feasible batch sizes; the test suite (`tests/test_apsp_jax.py`)
+asserts agreement with scipy FW within fp32 round-off across the same
+(grid × density) regime as the accuracy sweep. The smoke test confirms
+the GPU port is correctly wired; the throughput verdict is the only
+remaining M2 question.
+
+### What's still unanswered
+
+| Question | Required run | Target / when |
+|---|---|---|
+| **M2 throughput gate**: ≥1,178 rollouts/sec at batch 256 on 10×10/horizon-15 simulator-only (10× the scipy CPU baseline) | `python scripts/m2_apsp_throughput.py` on GPU | this weekend, 2026-05-23/24 |
+| **M2 memory gate**: peak device memory at batch 256 fits comfortably on a 24 GB GPU (naive bound: 11.7 GB temp tensor at N=225) | same run | this weekend |
+| **M3** — full vectorized simulator on GPU (demand, accessibility, land-use update, action application, reward — all vmap'd) | port from `sim_cpu` to `sim_gpu` | week of 2026-05-25 |
+| **Figure 1**: throughput vs. batch size on GPU | M3 + final benchmark sweep | week of 2026-05-25 |
+| **Figure 2**: throughput vs. graph size | M3 + sweep over N ∈ {25, 100, 225, 400} | M5, week of 2026-05-25 |
+| **Figure 3 (GPU half)**: per-component time breakdown on GPU | M3 + instrumented step | M5 |
+| **Figure 4**: variable-topology overhead vs. frozen-mask baseline | M3 + ablation run | M5 |
+| **M4** — end-to-end RL training throughput | wire batched simulator into SB3 / PureJaxRL | most likely scope cut if M3 slips; see below |
+
+### Plan and revised schedule
+
+The original schedule had M2 closing 2026-05-10 and M4 closing today
+(2026-05-22). The schedule slipped by ~11 days. The honest revised plan
+to the 2026-06-02 presentation:
+
+| Date | Work | Why this date |
+|---|---|---|
+| 2026-05-23/24 | GPU run; close M2 throughput + memory bars | GPU access lined up for the weekend |
+| 2026-05-25 — 2026-05-29 | M3 — vmap the rest of the simulator | ~5 days for a compressed M3; the architectural pattern is set by `apsp_batched` |
+| 2026-05-30 — 2026-05-31 | M5 figures (1–4) and M6 writeup | Reproduction scripts already exist for Figs 1 and 3 (CPU); GPU runs are quick once M3 is in |
+| 2026-06-01 | Final figure polish + presentation rehearsal | Buffer day |
+| 2026-06-02 | CS348K final presentation | Hard deadline |
+
+**Most likely scope cut if M3 slips: M4 (end-to-end RL training
+integration / RQ3).** The systems contribution can be presented on
+simulator-only throughput (Figs 1, 2, 3) plus the variable-topology
+overhead figure (Fig 4), which is the contribution-distinguishing
+experiment. M4 becomes a "future work" line in the writeup. RQ3 (does
+simulator throughput translate to training throughput) is interesting
+but secondary to the core systems claim, and reviewers of this style of
+paper accept "training integration left for follow-up" when the
+simulator results stand on their own.
+
 ## Planned experiments
 
 1. **Throughput vs. batch size sweep.** Rollouts/sec at batch sizes

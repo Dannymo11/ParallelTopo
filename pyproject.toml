@@ -22,9 +22,15 @@ dev = [
     "pytest-cov>=4.1",
     "ruff>=0.4",
 ]
-# JAX deps land here in M2; deliberately not pinned until then so we don't
-# fight CUDA versions before we need to.
-gpu = []
+# JAX core + a sensible CUDA wheel. The CUDA pin is intentionally loose:
+# CS348K cluster machines may run a different CUDA than your laptop, and
+# the right wheel depends on the runtime. If `jax[cuda12]` doesn't match
+# your driver, install plain `jax` here and a matching wheel separately
+# (see https://docs.jax.dev/en/latest/installation.html).
+gpu = [
+    "jax>=0.4.30",
+    "jaxlib>=0.4.30",
+]
 # Optional: matplotlib for the profiling breakdown bar chart. CSV and JSON
 # are always written; the PNG is a nice-to-have for the checkpoint writeup.
 figures = [
