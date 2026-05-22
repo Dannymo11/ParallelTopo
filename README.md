@@ -191,11 +191,9 @@ remaining M2 question.
 | **Figure 4**: variable-topology overhead vs. frozen-mask baseline | M3 + ablation run | M5 |
 | **M4** — end-to-end RL training throughput | wire batched simulator into SB3 / PureJaxRL | most likely scope cut if M3 slips; see below |
 
-### Plan and revised schedule
+### Plan to the presentation
 
-The original schedule had M2 closing 2026-05-10 and M4 closing today
-(2026-05-22). The schedule slipped by ~11 days. The honest revised plan
-to the 2026-06-02 presentation:
+The plan from here to the 2026-06-02 presentation:
 
 | Date | Work | Why this date |
 |---|---|---|
@@ -255,9 +253,6 @@ python -m topograph.bench.profiling \
 ```
 
 ## Milestones
-
-See the [Linear project](https://linear.app/topograph-stanford/project/cs348k-topograph-604634a13675)
-for full milestone descriptions and target dates.
 
 * **M1** *(done)* — CPU baseline simulator + throughput floor + profiling.
 * **M2** — Batched APSP feasibility study (decision gate for the rest of the project).
