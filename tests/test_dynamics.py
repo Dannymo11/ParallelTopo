@@ -15,8 +15,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from scipy.sparse.csgraph import shortest_path
-
 from topograph.sim_cpu import (
     GridCityConfig,
     WorldConfig,
@@ -24,6 +22,7 @@ from topograph.sim_cpu import (
     compute_accessibility,
     compute_demand,
     compute_travel_times,
+    compute_travel_times_numpy,
     compute_welfare,
     find_edge_index,
     make_world,
@@ -109,12 +108,27 @@ def test_apply_action_unaffordable_silent_no_op(world: WorldConfig) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_travel_times_no_edges_equals_apsp_walking_only(world: WorldConfig) -> None:
-    empty_mask = np.zeros(world.n_candidate_edges, dtype=np.bool_)
-    t = compute_travel_times(world, empty_mask)
-    # Reference: scipy Floyd-Warshall on the same dense walk-times matrix.
-    ref = shortest_path(world.walk_times, method="FW", directed=False)
-    np.testing.assert_allclose(t, ref, rtol=1e-9, atol=1e-9)
+def test_travel_times_scipy_matches_numpy_reference(world: WorldConfig) -> None:
+    """The scipy (default) and hand-NumPy backends must produce identical
+    output. This is the cross-implementation check: a regression in either
+    backend's matrix-construction or APSP call surfaces here before
+    contaminating downstream behavior."""
+    for mask_kind, mask in (
+        ("empty", np.zeros(world.n_candidate_edges, dtype=np.bool_)),
+        ("first_three_active", _mask_first_n(world.n_candidate_edges, 3)),
+    ):
+        t_scipy = compute_travel_times(world, mask)
+        t_numpy = compute_travel_times_numpy(world, mask)
+        np.testing.assert_allclose(
+            t_scipy, t_numpy, rtol=1e-9, atol=1e-9,
+            err_msg=f"scipy vs numpy mismatch on {mask_kind}",
+        )
+
+
+def _mask_first_n(n_candidate: int, n: int) -> np.ndarray:
+    mask = np.zeros(n_candidate, dtype=np.bool_)
+    mask[: min(n, n_candidate)] = True
+    return mask
 
 
 def test_travel_times_active_edge_does_not_increase_any_path(world: WorldConfig) -> None:

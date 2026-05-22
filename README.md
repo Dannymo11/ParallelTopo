@@ -74,25 +74,37 @@ uv pip install -e ".[dev,figures]"
 The CPU baseline is implemented and the evaluation harness produces real
 numbers.
 
-**Throughput floor** (10×10 grid, horizon 15, random policy, 200 episodes):
+**Throughput floor** (10×10 grid, horizon 15, random policy, 1000 episodes,
+scipy-backed Floyd-Warshall):
 
 | Metric | Value |
 |---|---|
-| Rollouts / sec | 66.3 |
-| Env-steps / sec | 995.2 |
-| Mean episode wall-time | 15.07 ms |
-| Episode return (random) | 204.1 ± 4.67, range [193.9, 219.3] |
+| Rollouts / sec | 117.8 |
+| Env-steps / sec | 1,767.4 |
+| Mean episode wall-time | 8.49 ms |
+| Episode return (random) | 204.2 ± 4.59, range [193.9, 227.4] |
 
-**Where the time goes** (10×10, horizon 15, 1500 step samples):
+The APSP backend is `scipy.sparse.csgraph.floyd_warshall` — chosen
+deliberately to give the CPU baseline a fair shot. An earlier
+hand-vectorized NumPy FW ran at 66.4 rollouts/sec (15.07 ms/episode); the
+swap to scipy delivered a 1.78× end-to-end speedup with bit-identical
+output. Quoting the slower number as the "CPU baseline" would have
+artificially inflated the M3 GPU speedup figure, which the systems-paper
+write-up cannot afford. The hand-vectorized version is retained as
+`compute_travel_times_numpy` for the M3 GPU-port correctness cross-check
+and as the input to `scripts/apsp_baseline_comparison.py`.
+
+**Where the time goes** (10×10, horizon 15, 1500 step samples,
+scipy backend):
 
 | Component | Mean (µs/step) | Fraction |
 |---|---:|---:|
-| `compute_travel_times` (Floyd-Warshall APSP) | 854.0 | **86.1%** |
-| `compute_demand` | 70.2 | 7.1% |
-| `compute_accessibility` (×2) | 55.2 | 5.5% |
-| `update_activity` | 9.1 | 0.9% |
-| `compute_welfare` | 2.0 | 0.2% |
-| `bookkeeping` + `apply_action` | 1.7 | 0.2% |
+| `compute_travel_times` (Floyd-Warshall APSP) | 417.9 | **74.9%** |
+| `compute_demand` | 70.7 | 12.7% |
+| `compute_accessibility` (×2) | 56.9 | 10.2% |
+| `update_activity` | 8.7 | 1.6% |
+| `compute_welfare` | 2.0 | 0.4% |
+| `bookkeeping` + `apply_action` | 1.7 | 0.3% |
 
 APSP is decisively the hot spot.
 

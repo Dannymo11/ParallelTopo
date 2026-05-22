@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.sparse.csgraph import floyd_warshall
 
 from .types import State, WorldConfig
 
@@ -70,20 +71,16 @@ def apply_action(
 # ---------------------------------------------------------------------------
 
 
-def compute_travel_times(
+def _build_direct_distance_matrix(
     world: WorldConfig,
     edge_mask: NDArray[np.bool_],
 ) -> NDArray[np.float64]:
-    """All-pairs shortest-path travel times under the active network.
+    """Direct-hop distance matrix: walk_times everywhere, overridden by
+    transit_times on currently-active candidate edges.
 
-    Direct hops use ``min(walking_time, transit_time)`` where a transit edge
-    is active; multi-hop paths are found via Floyd-Warshall over the dense
-    walking floor. The walking floor guarantees every pair has a finite
-    travel time regardless of which transit edges are active.
-
-    Returns a symmetric N×N matrix with zero diagonal. This is the M2
-    feasibility-study target: the GPU port will replace this with batched
-    approximate APSP (K iterations of Bellman-Ford-style relaxation).
+    Shared by both `compute_travel_times` (scipy backend) and
+    `compute_travel_times_numpy` (reference NumPy backend) so the only
+    difference between them is the APSP routine itself.
     """
     direct = world.walk_times.copy()
     if edge_mask.any():
@@ -97,11 +94,57 @@ def compute_travel_times(
         # place write lands on a temporary. Use plain assignment instead.
         direct[i, j] = np.minimum(direct[i, j], weights)
         direct[j, i] = np.minimum(direct[j, i], weights)
+    return direct
 
-    # Floyd-Warshall, vectorized over k. For an N=100 grid this is
-    # 100 outer iterations of a 100x100 elementwise minimum -> ~ms-scale.
-    n = direct.shape[0]
-    d = direct
+
+def compute_travel_times(
+    world: WorldConfig,
+    edge_mask: NDArray[np.bool_],
+) -> NDArray[np.float64]:
+    """All-pairs shortest-path travel times under the active network.
+
+    Direct hops use ``min(walking_time, transit_time)`` where a transit edge
+    is active; multi-hop paths are found via Floyd-Warshall over the dense
+    walking floor. The walking floor guarantees every pair has a finite
+    travel time regardless of which transit edges are active.
+
+    **Backend: scipy.sparse.csgraph.floyd_warshall.** This is the M1 default
+    because it is the most competitive single-environment CPU baseline —
+    the scipy implementation is C-coded and runs ~1.7× faster end-to-end
+    than the hand-vectorized NumPy version (see
+    `compute_travel_times_numpy` and `scripts/apsp_baseline_comparison.py`).
+    A weak CPU baseline would artificially inflate the M3 GPU speedup
+    number; that's exactly the thing the systems-paper write-up cannot
+    afford to be wrong about.
+
+    Returns a symmetric N×N matrix with zero diagonal. This is the M2
+    feasibility-study target: the GPU port will replace this with batched
+    approximate APSP (K iterations of Bellman-Ford-style relaxation).
+    """
+    direct = _build_direct_distance_matrix(world, edge_mask)
+    return floyd_warshall(direct, directed=False, overwrite=True)
+
+
+def compute_travel_times_numpy(
+    world: WorldConfig,
+    edge_mask: NDArray[np.bool_],
+) -> NDArray[np.float64]:
+    """Hand-vectorized NumPy Floyd-Warshall — kept as a reference implementation.
+
+    Same inputs, same outputs (numerically identical to
+    `compute_travel_times` — verified to floating-point zero) but ~1.7×
+    slower end-to-end. Two reasons it stays in the public surface:
+
+    1. **GPU-port symmetry.** The JAX batched Bellman-Ford in M3 will
+       look much more like this loop than like a scipy C call, so this
+       function is the reference that the GPU version's correctness
+       tests cross-check against.
+    2. **Reproducibility of the baseline comparison.**
+       `scripts/apsp_baseline_comparison.py` benches scipy vs. this
+       function head-to-head to confirm the speedup ratio hasn't drifted.
+    """
+    d = _build_direct_distance_matrix(world, edge_mask)
+    n = d.shape[0]
     for k in range(n):
         d = np.minimum(d, d[:, k : k + 1] + d[k : k + 1, :])
     return d

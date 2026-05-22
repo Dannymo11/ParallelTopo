@@ -21,6 +21,7 @@ from .dynamics import (
     compute_accessibility,
     compute_demand,
     compute_travel_times,
+    compute_travel_times_numpy,
     compute_welfare,
     update_activity,
 )
@@ -37,6 +38,7 @@ __all__ = [
     "compute_accessibility",
     "compute_demand",
     "compute_travel_times",
+    "compute_travel_times_numpy",
     "compute_welfare",
     "find_edge_index",
     "make_world",
