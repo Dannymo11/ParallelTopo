@@ -1,0 +1,187 @@
+{
+  "config": {
+    "grid_shapes": [
+      [
+        10,
+        10
+      ],
+      [
+        15,
+        15
+      ]
+    ],
+    "batch_sizes": [
+      1,
+      16,
+      64,
+      256,
+      1024
+    ],
+    "horizon": 15,
+    "k_iterations": 5,
+    "policy": "uniform-random-legal (rollout_random)",
+    "measures": "full on-device simulator step (all dynamics), not APSP-only",
+    "warmup_rollouts": 2,
+    "timed_rollouts": 5,
+    "scipy_cpu_baseline_rollouts_per_sec": 117.8,
+    "throughput_gate_at_batch_256": 1178.0,
+    "reference_grid_shape": [
+      10,
+      10
+    ],
+    "backend": "gpu",
+    "devices": [
+      "cuda:0"
+    ]
+  },
+  "results": [
+    {
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 1,
+      "k_iterations": 5,
+      "median_rollout_s": 0.0019862570000004354,
+      "rollouts_per_sec": 503.4595221060421,
+      "speedup_vs_scipy_baseline": 4.2738499329884725,
+      "peak_device_mb": 0.167236328125
+    },
+    {
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 16,
+      "k_iterations": 5,
+      "median_rollout_s": 0.004511574000000351,
+      "rollouts_per_sec": 3546.4341269806846,
+      "speedup_vs_scipy_baseline": 30.105552860617017,
+      "peak_device_mb": 2.52294921875
+    },
+    {
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 64,
+      "k_iterations": 5,
+      "median_rollout_s": 0.011510850000000517,
+      "rollouts_per_sec": 5559.971678894011,
+      "speedup_vs_scipy_baseline": 47.1984013488456,
+      "peak_device_mb": 9.929443359375
+    },
+    {
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 256,
+      "k_iterations": 5,
+      "median_rollout_s": 0.03621839200000032,
+      "rollouts_per_sec": 7068.232073914207,
+      "speedup_vs_scipy_baseline": 60.00197006718342,
+      "peak_device_mb": 39.66552734375
+    },
+    {
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 1024,
+      "k_iterations": 5,
+      "median_rollout_s": 0.14683919099999798,
+      "rollouts_per_sec": 6973.615102524053,
+      "speedup_vs_scipy_baseline": 59.19876997049281,
+      "peak_device_mb": 158.462890625
+    },
+    {
+      "grid_shape": [
+        15,
+        15
+      ],
+      "n_zones": 225,
+      "batch_size": 1,
+      "k_iterations": 5,
+      "median_rollout_s": 0.004395603999999054,
+      "rollouts_per_sec": 227.50002047505083,
+      "speedup_vs_scipy_baseline": 1.9312395626065435,
+      "peak_device_mb": 158.462890625
+    },
+    {
+      "grid_shape": [
+        15,
+        15
+      ],
+      "n_zones": 225,
+      "batch_size": 16,
+      "k_iterations": 5,
+      "median_rollout_s": 0.01788786900000261,
+      "rollouts_per_sec": 894.4609332725807,
+      "speedup_vs_scipy_baseline": 7.593046971753656,
+      "peak_device_mb": 158.462890625
+    },
+    {
+      "grid_shape": [
+        15,
+        15
+      ],
+      "n_zones": 225,
+      "batch_size": 64,
+      "k_iterations": 5,
+      "median_rollout_s": 0.05652761799999695,
+      "rollouts_per_sec": 1132.1899323619732,
+      "speedup_vs_scipy_baseline": 9.61111996911692,
+      "peak_device_mb": 158.462890625
+    },
+    {
+      "grid_shape": [
+        15,
+        15
+      ],
+      "n_zones": 225,
+      "batch_size": 256,
+      "k_iterations": 5,
+      "median_rollout_s": 0.22264457400000026,
+      "rollouts_per_sec": 1149.81468176269,
+      "speedup_vs_scipy_baseline": 9.760735838392955,
+      "peak_device_mb": 199.124755859375
+    },
+    {
+      "grid_shape": [
+        15,
+        15
+      ],
+      "n_zones": 225,
+      "batch_size": 1024,
+      "k_iterations": 5,
+      "median_rollout_s": 0.8933116180000056,
+      "rollouts_per_sec": 1146.296521131771,
+      "speedup_vs_scipy_baseline": 9.730870298232352,
+      "peak_device_mb": 795.911865234375
+    }
+  ],
+  "verdict": {
+    "(10, 10)": {
+      "rollouts_per_sec_at_batch_256": 7068.232073914207,
+      "speedup_vs_scipy": 60.00197006718342,
+      "is_reference_workload": true,
+      "throughput_gate_applies": true,
+      "throughput_gate_passes": true,
+      "peak_device_mb_at_batch_256": 39.66552734375
+    },
+    "(15, 15)": {
+      "rollouts_per_sec_at_batch_256": 1149.81468176269,
+      "speedup_vs_scipy": 9.760735838392955,
+      "is_reference_workload": false,
+      "throughput_gate_applies": false,
+      "throughput_gate_passes": null,
+      "peak_device_mb_at_batch_256": 199.124755859375
+    }
+  }
+}
