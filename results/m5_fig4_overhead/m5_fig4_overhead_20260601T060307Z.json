@@ -1,0 +1,124 @@
+{
+  "config": {
+    "grid_shapes": [
+      [
+        10,
+        10
+      ],
+      [
+        15,
+        15
+      ]
+    ],
+    "batch_sizes": [
+      64,
+      256,
+      1024
+    ],
+    "horizon": 15,
+    "k_iterations": 5,
+    "warmup_rollouts": 2,
+    "timed_rollouts": 7,
+    "backend": "gpu",
+    "devices": [
+      "cuda:0"
+    ],
+    "method": "production (freeze_mask=False) vs ablation (freeze_mask=True), matched workload"
+  },
+  "results": [
+    {
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 64,
+      "median_production_s": 0.012169128000000029,
+      "median_frozen_s": 0.012020329999999468,
+      "production_rollouts_per_sec": 5259.210027209825,
+      "frozen_rollouts_per_sec": 5324.313059625055,
+      "overhead_pct": 1.237886147889178,
+      "production_edges_built": 960,
+      "frozen_edges_built": 0
+    },
+    {
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 256,
+      "median_production_s": 0.0369443829999998,
+      "median_frozen_s": 0.03687141199999999,
+      "production_rollouts_per_sec": 6929.334832848646,
+      "frozen_rollouts_per_sec": 6943.0484517381665,
+      "overhead_pct": 0.19790671428534046,
+      "production_edges_built": 3840,
+      "frozen_edges_built": 0
+    },
+    {
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 1024,
+      "median_production_s": 0.14701299400000067,
+      "median_frozen_s": 0.14695745999999943,
+      "production_rollouts_per_sec": 6965.370693695248,
+      "frozen_rollouts_per_sec": 6968.002849259942,
+      "overhead_pct": 0.03778916701557389,
+      "production_edges_built": 15360,
+      "frozen_edges_built": 0
+    },
+    {
+      "grid_shape": [
+        15,
+        15
+      ],
+      "n_zones": 225,
+      "batch_size": 64,
+      "median_production_s": 0.056679722000000154,
+      "median_frozen_s": 0.05668474400000001,
+      "production_rollouts_per_sec": 1129.1516214564324,
+      "frozen_rollouts_per_sec": 1129.0515839676366,
+      "overhead_pct": -0.008859526647689618,
+      "production_edges_built": 960,
+      "frozen_edges_built": 0
+    },
+    {
+      "grid_shape": [
+        15,
+        15
+      ],
+      "n_zones": 225,
+      "batch_size": 256,
+      "median_production_s": 0.22330592800000204,
+      "median_frozen_s": 0.22336961399999922,
+      "production_rollouts_per_sec": 1146.409333118992,
+      "frozen_rollouts_per_sec": 1146.0824747631111,
+      "overhead_pct": -0.028511487689268422,
+      "production_edges_built": 3840,
+      "frozen_edges_built": 0
+    },
+    {
+      "grid_shape": [
+        15,
+        15
+      ],
+      "n_zones": 225,
+      "batch_size": 1024,
+      "median_production_s": 0.8909339890000005,
+      "median_frozen_s": 0.8904686639999966,
+      "production_rollouts_per_sec": 1149.3556342477798,
+      "frozen_rollouts_per_sec": 1149.9562437157294,
+      "overhead_pct": 0.05225619034292705,
+      "production_edges_built": 15360,
+      "frozen_edges_built": 0
+    }
+  ],
+  "summary": {
+    "mean_overhead_pct": 0.2480778675326769,
+    "max_overhead_pct": 1.237886147889178
+  }
+}
