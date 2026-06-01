@@ -69,6 +69,16 @@ THROUGHPUT_GATE_AT_BATCH_256: float = (
     SCIPY_CPU_BASELINE_ROLLOUTS_PER_SEC * THROUGHPUT_GATE_FACTOR  # = 1178
 )
 
+# The throughput gate is defined on the canonical M1 reference workload
+# (10x10 / horizon 15) — that is where the 117.8 rollouts/sec scipy baseline
+# was measured. Larger grids (15x15) are run for the MEMORY gate and for the
+# graph-size scaling story (M5 Fig 2). Applying the 10x10-relative threshold
+# to 15x15 compares GPU throughput against the *wrong* CPU baseline (a 15x15
+# CPU rollout is ~3-6 rollouts/sec, not 117.8), so the verdict only gates
+# throughput on the reference grid. 15x15 reports memory + an informational
+# speedup-vs-10x10-baseline figure, never a throughput pass/fail.
+REFERENCE_GRID_SHAPE: tuple[int, int] = (10, 10)
+
 # Bench loop hygiene.
 WARMUP_EPISODES: int = 2  # first call triggers JIT compile; never time it
 TIMED_EPISODES: int = 5   # take median over this many for stability
@@ -256,8 +266,11 @@ def print_results(results: list[BenchResult]) -> None:
     for r in results:
         peak_str = f"{r.peak_device_mb:.0f}" if r.peak_device_mb is not None else "  --  "
         marker = ""
-        if r.batch_size == 256:
-            marker = " *" if r.rollouts_per_sec >= THROUGHPUT_GATE_AT_BATCH_256 else " FAIL"
+        # The throughput pass/fail marker only applies to the reference grid;
+        # 15x15 at batch 256 is a memory-gate / scaling row, not a throughput
+        # gate, so it gets no PASS/FAIL flag here.
+        if r.batch_size == 256 and r.grid_shape == REFERENCE_GRID_SHAPE:
+            marker = " *PASS" if r.rollouts_per_sec >= THROUGHPUT_GATE_AT_BATCH_256 else " FAIL"
         print(
             f"  {str(r.grid_shape):<8}{r.n_zones:>5}  {r.batch_size:>7}  "
             f"{r.median_episode_s * 1000:>10.2f}  "
@@ -274,10 +287,21 @@ def m2_verdict(results: list[BenchResult]) -> dict:
         gate_result = next((r for r in grid_results if r.batch_size == 256), None)
         if gate_result is None:
             continue
+        is_reference = grid_shape == REFERENCE_GRID_SHAPE
         per_grid[str(grid_shape)] = {
             "rollouts_per_sec_at_batch_256": gate_result.rollouts_per_sec,
             "speedup_vs_scipy": gate_result.speedup_vs_scipy_baseline,
-            "throughput_gate_passes": gate_result.rollouts_per_sec >= THROUGHPUT_GATE_AT_BATCH_256,
+            "is_reference_workload": is_reference,
+            # Throughput is only gated on the reference grid (see
+            # REFERENCE_GRID_SHAPE). For non-reference grids this is None:
+            # the row exists for the memory gate / graph-size scaling, and the
+            # 10x10-relative speedup above is informational only.
+            "throughput_gate_applies": is_reference,
+            "throughput_gate_passes": (
+                gate_result.rollouts_per_sec >= THROUGHPUT_GATE_AT_BATCH_256
+                if is_reference
+                else None
+            ),
             "peak_device_mb_at_batch_256": gate_result.peak_device_mb,
             "memory_gate_passes": (
                 gate_result.peak_device_mb is not None
@@ -335,11 +359,17 @@ def main() -> None:
     print("  M2 throughput + memory gate verdict")
     print("=" * 90)
     for grid_str, v in verdict.items():
-        thr_pass = "PASS" if v["throughput_gate_passes"] else "FAIL"
         mem_pass = "PASS" if v["memory_gate_passes"] else "FAIL"
         print(f"\n  Grid {grid_str}:")
-        print(f"    Throughput @ batch 256: {v['rollouts_per_sec_at_batch_256']:,.1f} rollouts/sec "
-              f"({v['speedup_vs_scipy']:.2f}x scipy)   [{thr_pass}]")
+        if v["throughput_gate_applies"]:
+            thr_pass = "PASS" if v["throughput_gate_passes"] else "FAIL"
+            print(f"    Throughput @ batch 256: {v['rollouts_per_sec_at_batch_256']:,.1f} rollouts/sec "
+                  f"({v['speedup_vs_scipy']:.2f}x scipy)   [{thr_pass}]  "
+                  "<- M2 throughput gate (reference workload)")
+        else:
+            print(f"    Throughput @ batch 256: {v['rollouts_per_sec_at_batch_256']:,.1f} rollouts/sec "
+                  f"({v['speedup_vs_scipy']:.2f}x the 10x10 CPU baseline, informational)   "
+                  "[not gated — run for memory + graph-size scaling]")
         peak = v["peak_device_mb_at_batch_256"]
         peak_str = f"{peak:.0f} MB" if peak is not None else "unknown"
         print(f"    Peak device memory @ batch 256: {peak_str}   [{mem_pass}]")
