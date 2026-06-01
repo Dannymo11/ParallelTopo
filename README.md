@@ -125,8 +125,46 @@ zero on every input":
 The make-or-break technical risk for the whole project — whether batched
 shortest paths can be vectorized across environments with *different*
 active edge sets at acceptable accuracy — landed decisively today. The
-throughput half of the M2 gate is wired and correctness-tested but
-requires a GPU run to verdict; that run is scheduled this weekend.
+throughput and memory halves closed on 2026-05-31 with a GPU run on a
+Modal A100 — **all three M2 gates now pass.**
+
+### M2 throughput + memory — closed (2026-05-31)
+
+GPU run on a Modal A100 (40 GB); batched APSP, K=5, fp32, horizon 15.
+Reproduce: `modal run scripts/modal_m2_throughput.py` (or `python
+scripts/m2_apsp_throughput.py` on any CUDA box). Artifact:
+`results/m2_apsp_throughput/m2_throughput_20260531T191537Z.{json,csv}`.
+
+**Throughput gate — PASS.** 10×10/horizon-15 reference workload,
+simulator-only, batch 256: **5,994 rollouts/sec = 50.9× the scipy CPU
+baseline** (117.8 rollouts/sec). Gate was ≥1,150 (≥10×); cleared by ~5×.
+Throughput is flat-to-rising once the GPU saturates; the sweet spot is
+broad (batch 64–1024).
+
+| grid | batch | rollouts/sec | speedup | peak MB |
+|---|---:|---:|---:|---:|
+| 10×10 | 1 | 727.5 | 6.2× | 0 |
+| 10×10 | 16 | 4,822.6 | 40.9× | 4 |
+| 10×10 | 64 | 6,284.5 | 53.3× | 15 |
+| 10×10 | 256 | **5,994.1** | **50.9×** | 59 |
+| 10×10 | 1024 | 7,263.3 | 61.7× | 234 |
+| 15×15 | 256 | 1,160.2 | — | 297 |
+| 15×15 | 1024 | 1,158.9 | — | 1,187 |
+
+**Memory gate — PASS, by a wide margin.** Peak device memory is 297 MB at
+15×15/batch 256 and ≤1.2 GB across the entire sweep — far under 24 GB. The
+naive (B, N, N, N) min-plus bound (11.7 GB at 15×15/256, 46 GB at
+15×15/1024) never materializes: XLA fuses the broadcast-add-and-min into a
+single reduce kernel, so peak memory scales as O(B·N²), not O(B·N³). The
+cubic memory wall is pushed well past N=225 — bf16 / K-axis tiling are not
+needed at M1-spec sizes.
+
+**Note on 15×15 throughput.** The gate is defined on the 10×10 reference
+workload (where the 117.8 baseline was measured); 15×15 is run for the
+memory gate and the M5 graph-size figure. Comparing 15×15 GPU throughput
+to the *10×10* CPU baseline understates it — a like-for-like 15×15 CPU
+rollout is ~3–6 rollouts/sec, so 15×15 GPU at 1,160 rollouts/sec is
+~200–370×.
 
 ### Evaluation framework
 
@@ -134,10 +172,10 @@ The four figures the writeup will contain, with current status:
 
 | # | Figure | Status | What it shows |
 |---|---|---|---|
-| 1 | Throughput vs. batch size on fixed grid | **partial** | Rollouts/sec at batch {1, 16, 64, 256, 1024} on 10×10/horizon-15 reference workload. CPU JAX baseline ran end-to-end (smoke test passed); GPU verdict pending. CPU baseline (scipy FW @ 117.8 rollouts/sec) as horizontal line. |
-| 2 | Throughput vs. graph size at fixed batch | **stub** | Fix batch at sweet spot from Fig 1; vary N over {25, 100, 225, 400}. Identifies where the approach breaks down (memory, APSP cost). |
+| 1 | Throughput vs. batch size on fixed grid | **done** | Full-simulator rollouts/sec at batch {1, 16, 64, 256, 1024} on 10×10/horizon-15. GPU verdict 2026-06-01: **60.0× the scipy CPU baseline at batch 256** (7,068 rollouts/sec, full on-device `rollout_random`); the APSP-only kernel alone was 50.9× (M2). Scipy FW @ 117.8 rollouts/sec as the horizontal reference. End-to-end-training curve pending M4. |
+| 2 | Throughput vs. graph size at fixed batch | **done** | Batch 256/1024, N over {25…900} (5×5…30×30). GPU 2026-06-01: throughput falls 6,252→20 rollouts/sec (10×10→30×30) ~O(N³); peak memory O(B·N²), 30×30@1024 = 12.7 GB (no OOM). Compute, not memory, is the ceiling. `scripts/m5_fig2_graphsize.py`. |
 | 3 | Where-does-time-go per-component breakdown | **partial** | Per-component step time at one operating point. CPU figure ready (`results/profiling/cpu_breakdown_*.png`). GPU breakdown produced after M3 lands. |
-| 4 | Variable-topology overhead vs. fixed-topology | **stub** | Re-run the simulator with the edge mask frozen at episode start; report overhead percentage at matched batch and graph size. Contribution-distinguishing experiment vs. Madrona / Brax / Isaac Gym. |
+| 4 | Variable-topology overhead vs. fixed-topology | **done** | Production vs frozen-mask, matched workload. GPU 2026-06-01: **mean 0.25%, max 1.24% overhead** → variable topology is effectively free vs a fixed-topology baseline. Contribution-distinguishing experiment vs. Madrona / Brax / Isaac Gym. `scripts/m5_fig4_overhead.py`. |
 
 ### What's been answered (real intermediate results)
 
@@ -182,13 +220,13 @@ remaining M2 question.
 
 | Question | Required run | Target / when |
 |---|---|---|
-| **M2 throughput gate**: ≥1,178 rollouts/sec at batch 256 on 10×10/horizon-15 simulator-only (10× the scipy CPU baseline) | `python scripts/m2_apsp_throughput.py` on GPU | this weekend, 2026-05-23/24 |
-| **M2 memory gate**: peak device memory at batch 256 fits comfortably on a 24 GB GPU (naive bound: 11.7 GB temp tensor at N=225) | same run | this weekend |
-| **M3** — full vectorized simulator on GPU (demand, accessibility, land-use update, action application, reward — all vmap'd) | port from `sim_cpu` to `sim_gpu` | week of 2026-05-25 |
-| **Figure 1**: throughput vs. batch size on GPU | M3 + final benchmark sweep | week of 2026-05-25 |
-| **Figure 2**: throughput vs. graph size | M3 + sweep over N ∈ {25, 100, 225, 400} | M5, week of 2026-05-25 |
+| ~~M2 throughput gate~~ | **CLOSED 2026-05-31** | 5,994 rollouts/sec @ batch 256 = 50.9× scipy (gate ≥10×) |
+| ~~M2 memory gate~~ | **CLOSED 2026-05-31** | 297 MB @ 15×15/256, ≤1.2 GB peak (≪24 GB) |
+| ~~M3 — full vectorized simulator on GPU~~ | **DONE 2026-06-01** | all components vmap'd + assembled step + on-device `rollout_random`; equivalence-tested vs CPU at fp32 (130 tests pass) |
+| ~~Figure 1: throughput vs. batch size on GPU~~ | **DONE 2026-06-01** | full simulator 60.0× scipy @ batch 256 (7,068 rollouts/sec); `scripts/m3_throughput.py` |
+| ~~Figure 2: throughput vs. graph size~~ | **DONE 2026-06-01** | O(N³) throughput drop, O(B·N²) memory, no OOM through 30×30; `scripts/m5_fig2_graphsize.py` |
 | **Figure 3 (GPU half)**: per-component time breakdown on GPU | M3 + instrumented step | M5 |
-| **Figure 4**: variable-topology overhead vs. frozen-mask baseline | M3 + ablation run | M5 |
+| ~~Figure 4: variable-topology overhead~~ | **DONE 2026-06-01** | mean 0.25% / max 1.24% overhead; `scripts/m5_fig4_overhead.py` |
 | **M4** — end-to-end RL training throughput | wire batched simulator into SB3 / PureJaxRL | most likely scope cut if M3 slips; see below |
 
 ### Plan to the presentation
@@ -197,7 +235,7 @@ The plan from here to the 2026-06-02 presentation:
 
 | Date | Work | Why this date |
 |---|---|---|
-| 2026-05-23/24 | GPU run; close M2 throughput + memory bars | GPU access lined up for the weekend |
+| 2026-05-31 *(done)* | GPU run on Modal A100; closed M2 throughput + memory bars (50.9×, ≤1.2 GB) | — |
 | 2026-05-25 — 2026-05-29 | M3 — vmap the rest of the simulator | ~5 days for a compressed M3; the architectural pattern is set by `apsp_batched` |
 | 2026-05-30 — 2026-05-31 | M5 figures (1–4) and M6 writeup | Reproduction scripts already exist for Figs 1 and 3 (CPU); GPU runs are quick once M3 is in |
 | 2026-06-01 | Final figure polish + presentation rehearsal | Buffer day |
@@ -212,6 +250,113 @@ simulator throughput translate to training throughput) is interesting
 but secondary to the core systems claim, and reviewers of this style of
 paper accept "training integration left for follow-up" when the
 simulator results stand on their own.
+
+## Checkpoint 3 — Full GPU simulator (2026-06-01)
+
+M3 is complete: every per-step component is ported to JAX and the whole
+simulator runs on-device. `sim_gpu/dynamics.py` has `compute_accessibility`,
+`update_activity`, `compute_demand`, `apply_action`, `compute_welfare`
+(single-env + vmapped batched); `sim_gpu/step.py` assembles the vmapped
+`step` over an ECS-like `GPUState` with on-device direct-distance
+construction and the `freeze_mask` ablation flag; `sim_gpu/policy.py` adds
+the uniform-random-legal policy and a `lax.scan` `rollout_random` driver.
+Correctness is pinned by equivalence tests against the CPU baseline at fp32
+(`tests/test_dynamics_jax.py`, `test_step_jax.py`, `test_policy_jax.py`) —
+including a B=1 full-rollout reward+final-state match and aggregate reward
+parity (GPU random mean return 204.1 vs CPU 203.4). 130 tests pass.
+
+**Full-simulator throughput (the M5 Figure 1 headline).** A100 run via
+`scripts/m3_throughput.py` (reproduce: `modal run
+scripts/modal_m3_throughput.py`). Artifact:
+`results/m3_throughput/m3_throughput_20260601T045732Z.{json,csv}`.
+
+| grid | batch | rollouts/sec | speedup | peak MB |
+|---|---:|---:|---:|---:|
+| 10×10 | 1 | 503.5 | 4.3× | 0 |
+| 10×10 | 16 | 3,546.4 | 30.1× | 3 |
+| 10×10 | 64 | 5,560.0 | 47.2× | 10 |
+| 10×10 | 256 | **7,068.2** | **60.0×** | 40 |
+| 10×10 | 1024 | 6,973.6 | 59.2× | 158 |
+| 15×15 | 256 | 1,149.8 | — | 199 |
+| 15×15 | 1024 | 1,146.3 | — | 796 |
+
+**Throughput gate — PASS at 60.0×** (7,068 rollouts/sec at batch 256 on the
+10×10 reference workload, vs the ≥10× / ≥1,150 gate). This is the *full
+simulator* against the full scipy CPU baseline (117.8) — a like-for-like
+number, and the honest Figure 1 headline.
+
+**The full simulator is faster than APSP-only.** The M2 APSP-only bench hit
+5,994 rollouts/sec at batch 256; the full simulator hits 7,068 — more work
+per step, yet ~18% faster. The cause is dispatch amortization: M2 issued 15
+separate `jit` dispatches of `apsp_batched` over a static matrix, while M3
+fuses the entire 15-step episode (APSP + all dynamics + policy) into one
+`lax.scan` under a single dispatch, eliminating per-step launch overhead and
+host round-trips and letting XLA fuse across steps. The systems takeaway:
+the win is not only vectorization across environments but fusing the whole
+rollout into one compiled program. (At batch 1 the full sim is slower — 503
+vs 727 — where fixed per-rollout cost dominates; the curves cross as the
+batch fills the GPU.)
+
+**Memory stays tiny.** Peak ≤796 MB across the whole sweep (40 MB at the
+10×10/256 gate cell), confirming again that XLA fuses the (B, N, N, N) APSP
+intermediate away — the full simulator keeps the same O(B·N²) profile as the
+kernel alone.
+
+## M5 figures — graph-size scaling & variable-topology overhead (2026-06-01)
+
+Both run on a Modal A100. Reproduce: `modal run
+scripts/modal_m5_fig2_graphsize.py` and `modal run
+scripts/modal_m5_fig4_overhead.py`. Artifacts in
+`results/m5_fig2_graphsize/` and `results/m5_fig4_overhead/`.
+
+### Figure 2 — throughput vs. graph size at fixed batch
+
+Full-simulator rollouts/sec as N grows, at batch 256 (batch 1024 is within
+noise of this for N≥100 — the simulator is compute-bound, not
+occupancy-bound, above tiny grids):
+
+| grid | N | rollouts/sec | env-steps/sec | peak MB |
+|---|---:|---:|---:|---:|
+| 5×5 | 25 | 138,530 | 2,077,949 | 1 |
+| 10×10 | 100 | 6,252 | 93,787 | 40 |
+| 15×15 | 225 | 1,152 | 17,281 | 199 |
+| 20×20 | 400 | 248 | 3,720 | 628 |
+| 25×25 | 625 | 47 | 710 | 1,531 |
+| 30×30 | 900 | 20 | 295 | 3,172 |
+
+Two findings. (1) **The memory wall never bites** — peak memory tracks
+O(B·N²), not the naive O(B·N³); even 30×30 at batch 1024 peaks at 12.7 GB,
+far under 40 GB. The XLA-fusion result from M2/M3 holds at scale. (2) **The
+ceiling is compute** — in the N≥225 regime per-rollout time scales ~O(N³)
+(the K=5 APSP), so throughput falls 6,252→20 rollouts/sec from 10×10 to
+30×30 and is compute-impractical well before it OOMs. Finding the
+compute ceiling, not a memory ceiling, is the stronger result. (The memory
+column is the clean batch-256 sweep; the cumulative peak counter makes
+mid-range batch-1024 readings stale.)
+
+### Figure 4 — variable-topology overhead vs. fixed-topology baseline
+
+The contribution-distinguishing experiment: identical workload,
+`apply_action`'s per-step mask scatter on (production) vs off (frozen
+topology), measured per-step so both run all 15 APSPs (a fused `lax.scan`
+would let XLA hoist the frozen APSP and confound the measurement — see
+`scripts/m5_fig4_overhead.py`):
+
+| grid | batch | overhead |
+|---|---:|---:|
+| 10×10 | 64 | 1.24% |
+| 10×10 | 256 | 0.20% |
+| 10×10 | 1024 | 0.04% |
+| 15×15 | 64 | −0.01% |
+| 15×15 | 256 | −0.03% |
+| 15×15 | 1024 | 0.05% |
+
+**Variable topology costs ≤1.2% (0.25% mean)** over a fixed-topology
+baseline at matched batch and graph size, falling to noise as batch/grid
+grow — the per-step mask scatter is negligible against the K=5 APSP. This is
+the number that distinguishes TopoGraph from fixed-topology batched
+simulators (Madrona / Brax / Isaac Gym): the variable-topology capability is
+effectively free.
 
 ## Planned experiments
 
@@ -255,8 +400,8 @@ python -m topograph.bench.profiling \
 ## Milestones
 
 * **M1** *(done)* — CPU baseline simulator + throughput floor + profiling.
-* **M2** — Batched APSP feasibility study (decision gate for the rest of the project).
-* **M3** — Full vectorized simulator on GPU.
+* **M2** *(done 2026-05-31)* — Batched APSP feasibility study; all three gates passed (accuracy, throughput 50.9×, memory ≤1.2 GB).
+* **M3** *(done 2026-06-01)* — Full vectorized simulator on GPU; full-simulator throughput 60.0× scipy @ batch 256 (7,068 rollouts/sec), equivalence-tested vs CPU at fp32.
 * **M4** — End-to-end RL training throughput integration.
 * **M5** — Throughput study and ablations.
 * **M6** — Writeup and CS348K final presentation.
