@@ -1,0 +1,66 @@
+{
+  "config": {
+    "grid_shapes": [
+      [
+        10,
+        10
+      ]
+    ],
+    "batch_sizes": [
+      16,
+      64,
+      256
+    ],
+    "horizon": 15,
+    "k_iterations": 5,
+    "warmup_episodes": 1,
+    "timed_episodes": "3 (2 at batch 256)",
+    "scipy_cpu_baseline_rollouts_per_sec": 117.8,
+    "throughput_gate_at_batch_256": 1178.0,
+    "backend": "cpu",
+    "devices": [
+      "CpuDevice(id=0)"
+    ]
+  },
+  "environment_note": "Run on a CPU-only sandbox (no GPU), ~3GB RAM, JAX 0.4.35 cpu. This is NOT the M2 verdict; the throughput gate is defined against a 24GB GPU. batch 1024 at 10x10 (4.1GB temp tensor) and all 15x15 cells exceeded available RAM and were not run. Numbers validate the harness and the per-rollout CPU cost only.",
+  "results": [
+    {
+      "grid_shape": "10x10",
+      "n_zones": 100,
+      "batch_size": 16,
+      "k_iterations": 5,
+      "median_episode_s": 0.5520734159999847,
+      "rollouts_per_sec": 28.9816526865703,
+      "speedup_vs_scipy_baseline": 0.2460242163545866,
+      "peak_device_mb": null
+    },
+    {
+      "grid_shape": "10x10",
+      "n_zones": 100,
+      "batch_size": 64,
+      "k_iterations": 5,
+      "median_episode_s": 2.0889357089999976,
+      "rollouts_per_sec": 30.63761116450907,
+      "speedup_vs_scipy_baseline": 0.26008158883284443,
+      "peak_device_mb": null
+    },
+    {
+      "grid_shape": "10x10",
+      "n_zones": 100,
+      "batch_size": 256,
+      "k_iterations": 5,
+      "median_episode_s": 8.498833900000022,
+      "rollouts_per_sec": 30.12177941258498,
+      "speedup_vs_scipy_baseline": 0.2557027114820457,
+      "peak_device_mb": null
+    }
+  ],
+  "verdict": {
+    "10x10": {
+      "rollouts_per_sec_at_batch_256": 30.12177941258498,
+      "speedup_vs_scipy": 0.2557,
+      "throughput_gate_passes": false,
+      "note": "CPU run; gate requires GPU"
+    }
+  }
+}

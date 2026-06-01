@@ -1,0 +1,179 @@
+{
+  "config": {
+    "grid_shapes": [
+      [
+        10,
+        10
+      ],
+      [
+        15,
+        15
+      ]
+    ],
+    "batch_sizes": [
+      1,
+      16,
+      64,
+      256,
+      1024
+    ],
+    "horizon": 15,
+    "k_iterations": 5,
+    "warmup_episodes": 2,
+    "timed_episodes": 5,
+    "scipy_cpu_baseline_rollouts_per_sec": 117.8,
+    "throughput_gate_at_batch_256": 1178.0,
+    "backend": "gpu",
+    "devices": [
+      "cuda:0"
+    ]
+  },
+  "results": [
+    {
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 1,
+      "k_iterations": 5,
+      "median_episode_s": 0.0013745059999998865,
+      "rollouts_per_sec": 727.5341104368279,
+      "speedup_vs_scipy_baseline": 6.17601112425151,
+      "peak_device_mb": 0.19140625
+    },
+    {
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 16,
+      "k_iterations": 5,
+      "median_episode_s": 0.0033177059999998093,
+      "rollouts_per_sec": 4822.609357188648,
+      "speedup_vs_scipy_baseline": 40.938958889547095,
+      "peak_device_mb": 3.66259765625
+    },
+    {
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 64,
+      "k_iterations": 5,
+      "median_episode_s": 0.010183834000000225,
+      "rollouts_per_sec": 6284.4700728624,
+      "speedup_vs_scipy_baseline": 53.34864238423091,
+      "peak_device_mb": 14.64892578125
+    },
+    {
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 256,
+      "k_iterations": 5,
+      "median_episode_s": 0.042708938999999724,
+      "rollouts_per_sec": 5994.061336901899,
+      "speedup_vs_scipy_baseline": 50.883372978793716,
+      "peak_device_mb": 58.59423828125
+    },
+    {
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 1024,
+      "k_iterations": 5,
+      "median_episode_s": 0.1409818920000001,
+      "rollouts_per_sec": 7263.344146353201,
+      "speedup_vs_scipy_baseline": 61.65826949366045,
+      "peak_device_mb": 234.37548828125
+    },
+    {
+      "grid_shape": [
+        15,
+        15
+      ],
+      "n_zones": 225,
+      "batch_size": 1,
+      "k_iterations": 5,
+      "median_episode_s": 0.002756621999999709,
+      "rollouts_per_sec": 362.7628307399802,
+      "speedup_vs_scipy_baseline": 3.079480736332599,
+      "peak_device_mb": 234.37548828125
+    },
+    {
+      "grid_shape": [
+        15,
+        15
+      ],
+      "n_zones": 225,
+      "batch_size": 16,
+      "k_iterations": 5,
+      "median_episode_s": 0.01268923999999938,
+      "rollouts_per_sec": 1260.9108189301157,
+      "speedup_vs_scipy_baseline": 10.703826985824412,
+      "peak_device_mb": 234.37548828125
+    },
+    {
+      "grid_shape": [
+        15,
+        15
+      ],
+      "n_zones": 225,
+      "batch_size": 64,
+      "k_iterations": 5,
+      "median_episode_s": 0.054521594999999756,
+      "rollouts_per_sec": 1173.8468032712594,
+      "speedup_vs_scipy_baseline": 9.964743661046345,
+      "peak_device_mb": 234.37548828125
+    },
+    {
+      "grid_shape": [
+        15,
+        15
+      ],
+      "n_zones": 225,
+      "batch_size": 256,
+      "k_iterations": 5,
+      "median_episode_s": 0.2206513499999989,
+      "rollouts_per_sec": 1160.2013765154904,
+      "speedup_vs_scipy_baseline": 9.848908119825895,
+      "peak_device_mb": 296.63134765625
+    },
+    {
+      "grid_shape": [
+        15,
+        15
+      ],
+      "n_zones": 225,
+      "batch_size": 1024,
+      "k_iterations": 5,
+      "median_episode_s": 0.8836188300000014,
+      "rollouts_per_sec": 1158.8707316253076,
+      "speedup_vs_scipy_baseline": 9.837612322795481,
+      "peak_device_mb": 1186.52392578125
+    }
+  ],
+  "verdict": {
+    "(10, 10)": {
+      "rollouts_per_sec_at_batch_256": 5994.061336901899,
+      "speedup_vs_scipy": 50.883372978793716,
+      "throughput_gate_passes": true,
+      "peak_device_mb_at_batch_256": 58.59423828125,
+      "memory_gate_passes": true
+    },
+    "(15, 15)": {
+      "rollouts_per_sec_at_batch_256": 1160.2013765154904,
+      "speedup_vs_scipy": 9.848908119825895,
+      "throughput_gate_passes": false,
+      "peak_device_mb_at_batch_256": 296.63134765625,
+      "memory_gate_passes": true
+    }
+  }
+}
