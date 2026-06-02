@@ -52,6 +52,19 @@ from .policy import (
     valid_action_mask_batched,
     valid_action_mask_single,
 )
+from .mlp_policy import (
+    DEFAULT_HIDDEN,
+    MLPParams,
+    feature_dim,
+    init_mlp_params,
+    masked_logits,
+    mlp_forward,
+    n_actions,
+    reinforce_loss,
+    rollout_mlp,
+    state_features,
+    train_step,
+)
 
 __all__ = [
     "DEFAULT_K_ITERATIONS",
@@ -82,4 +95,15 @@ __all__ = [
     "random_legal_action_batched",
     "rollout_random",
     "episode_returns",
+    "MLPParams",
+    "DEFAULT_HIDDEN",
+    "feature_dim",
+    "n_actions",
+    "init_mlp_params",
+    "state_features",
+    "mlp_forward",
+    "masked_logits",
+    "rollout_mlp",
+    "reinforce_loss",
+    "train_step",
 ]
