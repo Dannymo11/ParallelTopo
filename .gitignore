@@ -44,3 +44,6 @@ results/figures/*.pdf
 # Local experiment scratch
 scratch/
 *.tmp
+
+TopoGraph_CS348K_final_report.docx
+TopoGraph_CS348K_presentation.pptx

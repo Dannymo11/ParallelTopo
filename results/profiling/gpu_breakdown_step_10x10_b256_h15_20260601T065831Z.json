@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "kind": "topograph_gpu_profile",
+  "timestamp": "2026-06-01T06:58:31+00:00",
+  "config": {
+    "grid_shape": [
+      10,
+      10
+    ],
+    "batch_size": 256,
+    "horizon": 15,
+    "k_iterations": 5,
+    "mask_density": 0.4,
+    "n_timed": 50,
+    "n_warmup": 3,
+    "world_seed": 0
+  },
+  "world_info": {
+    "n_zones": 100,
+    "n_candidate_edges": 426,
+    "action_dim": 427
+  },
+  "system_info": {
+    "python": "3.12.10",
+    "jax": "0.5.3",
+    "backend": "gpu",
+    "devices": [
+      "cuda:0"
+    ],
+    "platform": "Linux-4.4.0-x86_64-with-glibc2.36"
+  },
+  "method": "each component timed as an isolated jitted+vmapped op (median); isolated timing attributes per-op launch overhead to each component, so the fused_step time below is the ground-truth whole-step cost",
+  "components": {
+    "apply_action": {
+      "ms_per_batched_step": 0.2471389999998408,
+      "us_per_env_step": 0.9653867187493781,
+      "fraction": 0.049933203916728425
+    },
+    "compute_travel_times": {
+      "ms_per_batched_step": 3.1478750000002442,
+      "us_per_env_step": 12.296386718750954,
+      "fraction": 0.6360124637531306
+    },
+    "compute_accessibility_pre": {
+      "ms_per_batched_step": 0.16281300000020593,
+      "us_per_env_step": 0.6359882812508044,
+      "fraction": 0.03289555565616849
+    },
+    "update_activity": {
+      "ms_per_batched_step": 0.17289299999978525,
+      "us_per_env_step": 0.6753632812491611,
+      "fraction": 0.03493216944622162
+    },
+    "compute_accessibility_post": {
+      "ms_per_batched_step": 0.16242799999988122,
+      "us_per_env_step": 0.634484374999536,
+      "fraction": 0.03281776832384067
+    },
+    "compute_welfare": {
+      "ms_per_batched_step": 0.18002400000005636,
+      "us_per_env_step": 0.7032187500002202,
+      "fraction": 0.036372952475787805
+    },
+    "compute_demand": {
+      "ms_per_batched_step": 0.17656800000054318,
+      "us_per_env_step": 0.6897187500021218,
+      "fraction": 0.03567468489069595
+    },
+    "bookkeeping": {
+      "ms_per_batched_step": 0.699651999999773,
+      "us_per_env_step": 2.7330156249991133,
+      "fraction": 0.14136120153742648
+    }
+  },
+  "detail": {
+    "apsp_only": {
+      "ms_per_batched_step": 2.5143139999994624,
+      "us_per_env_step": 9.8215390624979
+    },
+    "build_direct_distance": {
+      "ms_per_batched_step": 0.2798450000001118,
+      "us_per_env_step": 1.0931445312504366
+    }
+  },
+  "component_sum_ms": 4.94939200000033,
+  "fused_step_ms": 2.789503999999887,
+  "fusion_ratio_sum_over_fused": 1.7742910567615355,
+  "policy_ms": 1.1001445000000665
+}
