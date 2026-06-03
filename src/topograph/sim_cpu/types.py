@@ -2,8 +2,8 @@
 
 The state surface is the *contract* between the CPU baseline and the GPU port:
 both implement the same `make_world / reset / step / run_episode` API on the
-same dataclasses. The CPU version (M1) operates on a single environment; the
-GPU version (M3) batches these via JAX `vmap`, where each leaf of the PyTree
+same dataclasses. The CPU version operates on a single environment; the
+GPU version batches these via JAX `vmap`, where each leaf of the PyTree
 gains a leading batch dimension.
 
 Design choices worth remembering:

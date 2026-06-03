@@ -25,8 +25,6 @@ NamedTuples as PyTrees automatically, so `vmap`/`jit` thread them without
 custom registration.
 
 **Direct-distance construction is now on-device** (`build_direct_distance_*`),
-closing the M3 deliverable that the M2 throughput script flagged: the
-benchmark no longer builds the matrix on CPU and transfers it.
 
 **`freeze_mask`** is the M5 Figure-4 ablation knob. When True, step skips
 the edge-mask update entirely (topology frozen at episode start), so the

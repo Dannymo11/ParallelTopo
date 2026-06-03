@@ -20,7 +20,6 @@ fixed-action-schedule equivalence in `test_step_jax.py`, (b) legality of
 every sampled action, and (c) aggregate reward parity with the CPU random
 policy (`test_policy_jax.py`).
 
-fp32 throughout.
 """
 
 from __future__ import annotations

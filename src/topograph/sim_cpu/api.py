@@ -5,14 +5,6 @@ The dynamics in `step` are a deliberate **no-op stub** at this checkpoint —
 the action is recorded, the step counter advances, and reward is zero.
 Filling in real grid-city dynamics is task #8.
 
-Why a stub instead of leaving `step` empty:
-
-* Lets the benchmark harness, sanity-test scaffolding, and `run_episode`
-  driver be written and exercised end-to-end at this checkpoint.
-* Provides the "evaluation code is at least running on a trivial baseline"
-  artifact the CS348K checkpoint asks for. The trivial baseline produces
-  an identifiably-empty result (zero reward, zero edges added), which the
-  sanity tests in task #3 will reject when we plug in real dynamics.
 """
 
 from __future__ import annotations
