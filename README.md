@@ -174,7 +174,7 @@ The four figures the writeup will contain, with current status:
 |---|---|---|---|
 | 1 | Throughput vs. batch size on fixed grid | **done** | Full-simulator rollouts/sec at batch {1, 16, 64, 256, 1024} on 10×10/horizon-15. GPU verdict 2026-06-01: **60.0× the scipy CPU baseline at batch 256** (7,068 rollouts/sec, full on-device `rollout_random`); the APSP-only kernel alone was 50.9× (M2). Scipy FW @ 117.8 rollouts/sec as the horizontal reference. End-to-end-training curve pending M4. |
 | 2 | Throughput vs. graph size at fixed batch | **done** | Batch 256/1024, N over {25…900} (5×5…30×30). GPU 2026-06-01: throughput falls 6,252→20 rollouts/sec (10×10→30×30) ~O(N³); peak memory O(B·N²), 30×30@1024 = 12.7 GB (no OOM). Compute, not memory, is the ceiling. `scripts/m5_fig2_graphsize.py`. |
-| 3 | Where-does-time-go per-component breakdown | **partial** | Per-component step time at one operating point. CPU figure ready (`results/profiling/cpu_breakdown_*.png`). GPU breakdown produced after M3 lands. |
+| 3 | Where-does-time-go per-component breakdown | **done** | CPU vs GPU at matched 10×10. Shortest-path (APSP) share rises 74.9%→~94% on GPU; the dynamics collapse from ~25% to ~6%. `results/profiling/{cpu,gpu}_breakdown_*`. |
 | 4 | Variable-topology overhead vs. fixed-topology | **done** | Production vs frozen-mask, matched workload. GPU 2026-06-01: **mean 0.25%, max 1.24% overhead** → variable topology is effectively free vs a fixed-topology baseline. Contribution-distinguishing experiment vs. Madrona / Brax / Isaac Gym. `scripts/m5_fig4_overhead.py`. |
 
 ### What's been answered (real intermediate results)
@@ -225,7 +225,7 @@ remaining M2 question.
 | ~~M3 — full vectorized simulator on GPU~~ | **DONE 2026-06-01** | all components vmap'd + assembled step + on-device `rollout_random`; equivalence-tested vs CPU at fp32 (130 tests pass) |
 | ~~Figure 1: throughput vs. batch size on GPU~~ | **DONE 2026-06-01** | full simulator 60.0× scipy @ batch 256 (7,068 rollouts/sec); `scripts/m3_throughput.py` |
 | ~~Figure 2: throughput vs. graph size~~ | **DONE 2026-06-01** | O(N³) throughput drop, O(B·N²) memory, no OOM through 30×30; `scripts/m5_fig2_graphsize.py` |
-| **Figure 3 (GPU half)**: per-component time breakdown on GPU | M3 + instrumented step | M5 |
+| ~~Figure 3 (GPU half): per-component breakdown on GPU~~ | **DONE 2026-06-01** | shortest-path share 74.9%→~94% (CPU→GPU) at 10×10; `python -m topograph.bench.gpu_profiling` |
 | ~~Figure 4: variable-topology overhead~~ | **DONE 2026-06-01** | mean 0.25% / max 1.24% overhead; `scripts/m5_fig4_overhead.py` |
 | **M4** — end-to-end RL training throughput | wire batched simulator into SB3 / PureJaxRL | most likely scope cut if M3 slips; see below |
 
@@ -334,6 +334,36 @@ compute ceiling, not a memory ceiling, is the stronger result. (The memory
 column is the clean batch-256 sweep; the cumulative peak counter makes
 mid-range batch-1024 readings stale.)
 
+### Figure 3 — where-does-time-go, CPU vs. GPU
+
+GPU per-component breakdown via `python -m topograph.bench.gpu_profiling` (run
+on the A100; artifacts `results/profiling/gpu_breakdown_*`). At the matched
+10×10 operating point, against the CPU profile (`cpu_breakdown_*`):
+
+| | CPU (scipy, 10×10) | GPU (10×10, batch 256) |
+|---|---:|---:|
+| shortest paths (direct-distance build + APSP) | 74.9% | ~94% |
+| all other dynamics (demand, accessibility ×2, update, welfare, action) | ~25% | ~6% |
+
+Read the GPU step by its ground truth, not the isolated per-component table:
+the fused whole-step is 3.34 ms, and the shortest-path work (APSP 2.64 ms +
+direct-distance build 0.51 ms) is 3.15 ms of it — **~94%**. The dynamics that
+cost ~23% on the CPU (demand 12.7% + accessibility 10.2%) collapse to a few
+percent on the GPU: the dense matmuls and outer products parallelize and fuse
+almost for free, while the O(N³) min-plus APSP stays memory-bandwidth-bound
+and remains the wall. (The isolated-op table reads 64.6% for shortest paths
+only because each op pays a fixed ~0.8 ms kernel-launch overhead — visible as
+the spurious 14% "bookkeeping" for a `step+1` — which the `sum/fused = 1.49×`
+gap quantifies and which disappears under fusion.)
+
+**The bottleneck does not move off APSP — it intensifies** (75% → ~94%), and
+it grows with N: at 15×15 the shortest-path share is ~97% (`gpu_breakdown_step_15x15_*`),
+tracking Figure 2's O(N³) scaling. Direct-distance construction is a roughly
+constant ~0.5 ms, so its share shrinks from ~15% at 10×10 to ~3% at 15×15. The
+takeaway: the GPU makes everything *except* shortest paths nearly free, so the
+60× speedup is batching + fusing the APSP across environments — exactly the
+component the fixed-iteration matrix-squaring kernel was built to accelerate.
+
 ### Figure 4 — variable-topology overhead vs. fixed-topology baseline
 
 The contribution-distinguishing experiment: identical workload,
@@ -357,6 +387,60 @@ grow — the per-step mask scatter is negligible against the K=5 APSP. This is
 the number that distinguishes TopoGraph from fixed-topology batched
 simulators (Madrona / Brax / Isaac Gym): the variable-topology capability is
 effectively free.
+
+## M4 — End-to-end training throughput (scaffolded 2026-06-01)
+
+RQ3 asks whether the simulator's throughput survives once a policy and a
+gradient update are in the loop, or whether the policy / host boundary
+dominates. The on-device scaffolding for the answer is built and tested;
+the GPU numbers are one Modal run away.
+
+**What landed (items 1–3 of the M4 plan).**
+
+* `sim_gpu/mlp_policy.py` — a hand-rolled 64-unit MLP (no flax/optax, so the
+  proven `jax[cuda12]==0.5.3` Modal image is unchanged), a bounded state
+  featurizer (`activity ⧺ edge_mask ⧺ budget-frac ⧺ step-frac`), masked
+  categorical sampling, and three drivers, all under one `jit`/`lax.scan`
+  (PureJaxRL-style, so the policy and the simulator never leave the device):
+  `rollout_mlp` (simulator + MLP inference) and `train_step` (simulator +
+  inference + REINFORCE backward + an SGD update), plus `reinforce_loss`.
+* `scripts/m4_train_throughput.py` — times **sim-only** (`rollout_random`)
+  vs **policy-inference** (`rollout_mlp`) vs **train-step** across batch
+  {1, 16, 64, 256, 1024} on 10×10, reports env-steps/sec and the
+  `infer/sim` and `train/sim` ratios, and prints the RQ3 verdict (throughput
+  retained under the policy + the batch where the train-step curve flattens).
+  Writes `results/m4_train_throughput/m4_train_throughput_<ts>.{json,csv}`.
+* `scripts/modal_m4_train_throughput.py` — A100 runner (a copy of the M3
+  runner pointed at the new script; no new image deps).
+* `scripts/plot_m4_train_throughput.py` — draws the three-driver
+  env-steps/sec-vs-batch chart (Figure 1b) from the JSON, titled with the
+  % of simulator throughput the train step retains at the sweet spot.
+* `tests/test_mlp_policy_jax.py` — legality of every sampled action,
+  key-determinism, shapes, and a `train_step` test that asserts a finite
+  loss and that **every** parameter moves (gradients flow through the
+  scanned rollout). 48 GPU-path tests pass on CPU JAX.
+
+**Reproduce (GPU):**
+
+```bash
+modal run scripts/modal_m4_train_throughput.py     # writes results/m4_train_throughput/
+python scripts/plot_m4_train_throughput.py          # renders Figure 1b from the latest JSON
+```
+
+The agent is deliberately not trained to do anything useful (an explicit
+M4 non-goal): the policy exists to consume the simulator at a realistic
+rate so the boundary cost is real. Correctness here means legality,
+determinism, and gradient flow — not policy quality.
+
+**Still open (item 4):** the GPU-vs-CPU end-to-end *training* speedup needs
+a realistic CPU baseline — a multi-process SB3 `SubprocVecEnv` running PPO
+on the same task. That is sketched in `scripts/m4_cpu_baseline_sb3.py`
+(Gymnasium wrapper around `sim_cpu` with the same observation features as
+the GPU policy) but not run here, because it pulls in `stable-baselines3`,
+`gymnasium`, and `torch` — kept out of the GPU image and meant for a CPU
+box. The GPU `train_step` env-steps/sec is the upper bound that baseline is
+measured against; until it lands, RQ3 is reported as the on-device retained
+throughput plus the simulator-only upper bound.
 
 ## Planned experiments
 
@@ -402,6 +486,29 @@ python -m topograph.bench.profiling \
 * **M1** *(done)* — CPU baseline simulator + throughput floor + profiling.
 * **M2** *(done 2026-05-31)* — Batched APSP feasibility study; all three gates passed (accuracy, throughput 50.9×, memory ≤1.2 GB).
 * **M3** *(done 2026-06-01)* — Full vectorized simulator on GPU; full-simulator throughput 60.0× scipy @ batch 256 (7,068 rollouts/sec), equivalence-tested vs CPU at fp32.
-* **M4** — End-to-end RL training throughput integration.
+* **M4** *(scaffolded 2026-06-01)* — End-to-end training throughput. On-device MLP policy + REINFORCE `train_step`, the three-driver throughput harness, and equivalence/grad tests have landed (items 1–3); GPU numbers pending a Modal run. The SB3 CPU training baseline (item 4) is sketched. See below.
 * **M5** — Throughput study and ablations.
 * **M6** — Writeup and CS348K final presentation.
+
+## Generalization — transit_learning APSP (2026-06-01)
+
+A check that the M2/M3 contribution isn't specific to our own grid cities: we
+applied the batched APSP kernel (fixed-iteration min-plus matrix-squaring) to an
+unrelated external transit-optimization codebase — Holliday & Dudek's
+`transit_learning`, which uses a vectorized Floyd-Warshall on its shortest-path
+hot path — and benchmarked it against that codebase's own FW on the real Mandl
+and Mumford city graphs (N = 15–127). Harness, data loaders, Modal runner, and
+figure live in [`transit_learning/`](transit_learning/) (PyTorch port, so the
+comparison runs in one runtime).
+
+On a Modal A100-40GB the kernel is **bit-exact with Floyd-Warshall at K = 5** and
+gives **20–117× speedups in the single-graph / small-batch regime** (it needs
+only `⌈log2 N⌉` sequential steps vs FW's `N`), narrowing to ~1.5–2× when hundreds
+of large graphs are batched — where, under PyTorch eager, it also hits an
+O(B·N³) memory wall that XLA fusion eliminated in our JAX simulator. The
+systems takeaway reinforces M5 Figure 3: the kernel's batch-scaling on GPU
+depends on fusion, not the algorithm alone, and its clearest win is
+latency-bound low-batch shortest-path evaluation on large graphs. This is
+write-up material for the Discussion section (Linear `TOP-31`); see
+[`transit_learning/README.md`](transit_learning/README.md) for the full tables
+and reproduction.
