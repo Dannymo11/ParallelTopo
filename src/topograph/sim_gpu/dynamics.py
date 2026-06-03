@@ -16,13 +16,6 @@ per-environment-distinct inputs so that the highest-risk bug — doing the
 per-env one — fails loudly instead of silently producing plausible
 numbers.
 
-fp32 throughout, matching the M2 APSP kernel decision (the M2 accuracy
-sweep proved fp32 is exact within round-off at K=5; fp64 is ~32x slower on
-consumer GPUs).
-
-Not yet here (later in M3): `apply_action` (edge-mask scatter + budget),
-`compute_welfare` (reward), and the assembled `step`. Those land once these
-three pass their equivalence tests, since `step` composes them.
 """
 
 from __future__ import annotations
