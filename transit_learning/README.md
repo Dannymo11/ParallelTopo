@@ -52,9 +52,7 @@ python compare.py throughput --synth-n 225                # synthetic 225-node g
 
 ## GPU run (the speedup figure)
 
-CPU can't show TopoGraph's batching win — it has no idle parallelism to fill,
-and torch eager materializes the `(B, N, N, N)` min-plus intermediate. Run the
-sweep on an A100 via Modal (same infra TopoGraph used for M2/M3):
+Run the sweep on an A100 via Modal:
 
 ```bash
 pip install modal && modal setup        # one time
@@ -143,7 +141,7 @@ transit_learning's evolutionary inner loop actually runs in. See
 
 ![GPU throughput figure](results/transit_learning_gpu/gpu_throughput_figure.png)
 
-## Two caveats this harness is honest about
+## Two caveats
 
 1. **Distances only, not paths.** transit_learning's FW returns both `dists`
    *and* the `nexts` predecessor matrix, and downstream route logic
