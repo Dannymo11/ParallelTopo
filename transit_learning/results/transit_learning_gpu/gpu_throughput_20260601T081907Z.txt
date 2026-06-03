@@ -1,0 +1,183 @@
+
+==============================================================================
+# Equivalence vs transit_learning FW (GPU)
+==============================================================================
+
+=== Distance equivalence: matrix-squaring vs transit_learning FW ===
+city          N   K     max_abs     max_rel  inf_mism  verdict
+Mandl        15   5    0.00e+00    0.00e+00         0  MATCH
+Mumford0     30   6    0.00e+00    0.00e+00         0  MATCH
+Mumford1     70   8    0.00e+00    0.00e+00         0  MATCH
+Mumford2    110   8    0.00e+00    0.00e+00         0  MATCH
+Mumford3    127   8    0.00e+00    0.00e+00         0  MATCH
+
+Overall: ALL MATCH
+
+
+==============================================================================
+# Convergence-K vs FW
+==============================================================================
+
+=== Convergence-K: smallest K with bit-exact distances vs FW ===
+(TopoGraph uses K=5 for grid cities; this checks it on real graphs)
+city          N  conservative_K   min_exact_K  K=5 exact?
+Mandl        15               5             3         yes
+Mumford0     30               6             3         yes
+Mumford1     70               8             4         yes
+Mumford2    110               8             4         yes
+Mumford3    127               8             4         yes
+
+
+==============================================================================
+# Throughput: synthetic N=25, batches [1, 16, 64, 256, 1024, 4096]
+==============================================================================
+
+=== Throughput: FW vs matrix-squaring on CUDA ===
+(graph source: synthetic N=25; median of 30 calls)
+  batch    N   K    FW (ms)    MS (ms)  speedup    FW aps    MS aps   peak MB
+      1   25   6       8.48       0.29    29.2x       118      3441         0
+     16   25   6      10.33       0.30    34.7x      1549     53800         1
+     64   25   6      10.16       0.30    34.4x      6300    216541         4
+    256   25   6      10.30       0.30    34.5x     24861    858496        18
+   1024   25   6      11.16       0.93    12.0x     91793   1097241        73
+   4096   25   6      13.01       3.14     4.1x    314838   1304053       287
+
+aps = APSP solves/sec. MS = matrix-squaring (TopoGraph kernel).
+Note: matrix-squaring returns distances only; FW also returns the
+predecessor matrix for path reconstruction (not timed-out here).
+
+
+==============================================================================
+# Throughput: synthetic N=100, batches [1, 16, 64, 256, 1024]
+==============================================================================
+
+=== Throughput: FW vs matrix-squaring on CUDA ===
+(graph source: synthetic N=100; median of 30 calls)
+  batch    N   K    FW (ms)    MS (ms)  speedup    FW aps    MS aps   peak MB
+      1  100   8      35.35       0.38    93.7x        28      2650         4
+     16  100   8      40.09       1.17    34.3x       399     13699        67
+     64  100   8      40.10       3.86    10.4x      1596     16599       264
+    256  100   8      49.32      14.61     3.4x      5190     17524      1055
+   1024  100   8     114.86      57.90     2.0x      8915     17687      4222
+
+aps = APSP solves/sec. MS = matrix-squaring (TopoGraph kernel).
+Note: matrix-squaring returns distances only; FW also returns the
+predecessor matrix for path reconstruction (not timed-out here).
+
+
+==============================================================================
+# Throughput: synthetic N=225, batches [1, 16, 64, 256]
+==============================================================================
+
+=== Throughput: FW vs matrix-squaring on CUDA ===
+(graph source: synthetic N=225; median of 30 calls)
+  batch    N   K    FW (ms)    MS (ms)  speedup    FW aps    MS aps   peak MB
+      1  225   9      77.89       1.03    75.4x        13       968        47
+     16  225   9      89.20      11.82     7.5x       179      1353       740
+     64  225   9     106.82      46.43     2.3x       599      1378      2955
+    256  225   9     297.79     185.53     1.6x       860      1380     11822
+
+aps = APSP solves/sec. MS = matrix-squaring (TopoGraph kernel).
+Note: matrix-squaring returns distances only; FW also returns the
+predecessor matrix for path reconstruction (not timed-out here).
+
+
+==============================================================================
+# Throughput: synthetic N=400, batches [1, 16, 64]
+==============================================================================
+
+=== Throughput: FW vs matrix-squaring on CUDA ===
+(graph source: synthetic N=400; median of 30 calls)
+  batch    N   K    FW (ms)    MS (ms)  speedup    FW aps    MS aps   peak MB
+      1  400  10     141.91       4.42    32.1x         7       226       258
+     16  400  10     176.78      70.46     2.5x        91       227      4127
+     64  400  10     405.03     281.44     1.4x       158       227     16511
+
+aps = APSP solves/sec. MS = matrix-squaring (TopoGraph kernel).
+Note: matrix-squaring returns distances only; FW also returns the
+predecessor matrix for path reconstruction (not timed-out here).
+
+
+==============================================================================
+# Throughput: real city Mandl, batches [1, 64, 256, 1024]
+==============================================================================
+
+=== Throughput: FW vs matrix-squaring on CUDA ===
+(graph source: Mandl; median of 30 calls)
+  batch    N   K    FW (ms)    MS (ms)  speedup    FW aps    MS aps   peak MB
+      1   15   5       5.08       0.26    19.4x       197      3826         0
+     64   15   5       6.12       0.26    23.7x     10456    247903         1
+    256   15   5       6.15       0.26    23.5x     41606    978126         4
+   1024   15   5       6.19       0.26    23.8x    165464   3945670        17
+
+aps = APSP solves/sec. MS = matrix-squaring (TopoGraph kernel).
+Note: matrix-squaring returns distances only; FW also returns the
+predecessor matrix for path reconstruction (not timed-out here).
+
+
+==============================================================================
+# Throughput: real city Mumford0, batches [1, 64, 256, 1024]
+==============================================================================
+
+=== Throughput: FW vs matrix-squaring on CUDA ===
+(graph source: Mumford0; median of 30 calls)
+  batch    N   K    FW (ms)    MS (ms)  speedup    FW aps    MS aps   peak MB
+      1   30   6       9.69       0.30    32.4x       103      3344         0
+     64   30   6      12.06       0.30    40.2x      5305    213250         8
+    256   30   6      11.92       0.39    30.8x     21475    660616        30
+   1024   30   6      13.02       1.44     9.0x     78620    710874       122
+
+aps = APSP solves/sec. MS = matrix-squaring (TopoGraph kernel).
+Note: matrix-squaring returns distances only; FW also returns the
+predecessor matrix for path reconstruction (not timed-out here).
+
+
+==============================================================================
+# Throughput: real city Mumford1, batches [1, 64, 256, 1024]
+==============================================================================
+
+=== Throughput: FW vs matrix-squaring on CUDA ===
+(graph source: Mumford1; median of 30 calls)
+  batch    N   K    FW (ms)    MS (ms)  speedup    FW aps    MS aps   peak MB
+      1   70   8      24.81       0.41    60.8x        40      2449         1
+     64   70   8      27.97       1.49    18.8x      2288     42964        92
+    256   70   8      30.83       5.25     5.9x      8303     48799       367
+   1024   70   8      46.36      20.40     2.3x     22087     50189      1468
+
+aps = APSP solves/sec. MS = matrix-squaring (TopoGraph kernel).
+Note: matrix-squaring returns distances only; FW also returns the
+predecessor matrix for path reconstruction (not timed-out here).
+
+
+==============================================================================
+# Throughput: real city Mumford2, batches [1, 64, 256, 1024]
+==============================================================================
+
+=== Throughput: FW vs matrix-squaring on CUDA ===
+(graph source: Mumford2; median of 30 calls)
+  batch    N   K    FW (ms)    MS (ms)  speedup    FW aps    MS aps   peak MB
+      1  110   8      37.36       0.38    99.4x        27      2660         5
+     64  110   8      42.61       5.03     8.5x      1502     12718       350
+    256  110   8      55.63      19.39     2.9x      4602     13206      1401
+   1024  110   8     137.16      77.21     1.8x      7465     13262      5604
+
+aps = APSP solves/sec. MS = matrix-squaring (TopoGraph kernel).
+Note: matrix-squaring returns distances only; FW also returns the
+predecessor matrix for path reconstruction (not timed-out here).
+
+
+==============================================================================
+# Throughput: real city Mumford3, batches [1, 64, 256, 1024]
+==============================================================================
+
+=== Throughput: FW vs matrix-squaring on CUDA ===
+(graph source: Mumford3; median of 30 calls)
+  batch    N   K    FW (ms)    MS (ms)  speedup    FW aps    MS aps   peak MB
+      1  127   8      44.83       0.39   113.6x        22      2534         8
+     64  127   8      51.19       7.63     6.7x      1250      8388       537
+    256  127   8      74.39      30.00     2.5x      3441      8533      2148
+   1024  127   8     205.52     119.73     1.7x      4982      8553      8592
+
+aps = APSP solves/sec. MS = matrix-squaring (TopoGraph kernel).
+Note: matrix-squaring returns distances only; FW also returns the
+predecessor matrix for path reconstruction (not timed-out here).
