@@ -1,0 +1,265 @@
+{
+  "config": {
+    "grid_shapes": [
+      [
+        10,
+        10
+      ]
+    ],
+    "batch_sizes": [
+      1,
+      16,
+      64,
+      256,
+      1024
+    ],
+    "horizon": 15,
+    "k_iterations": 5,
+    "hidden_units": 64,
+    "learning_rate": 0.001,
+    "drivers": [
+      "sim_only (rollout_random)",
+      "policy_infer (rollout_mlp)",
+      "train_step (REINFORCE + SGD)"
+    ],
+    "metric": "env_steps_per_sec = batch * horizon / call_time",
+    "warmup_calls": 2,
+    "timed_calls": 5,
+    "reference_grid_shape": [
+      10,
+      10
+    ],
+    "backend": "gpu",
+    "devices": [
+      "cuda:0"
+    ],
+    "scope_note": "On-device numbers only. Item 4 of the M4 plan \u2014 a multi-process SB3 VectorEnv CPU training baseline \u2014 is a separate harness; these numbers are its upper bound."
+  },
+  "results": [
+    {
+      "driver": "sim_only",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 1,
+      "median_call_s": 0.001950081000000381,
+      "rollouts_per_sec": 512.7992119300709,
+      "env_steps_per_sec": 7691.988178951064
+    },
+    {
+      "driver": "policy_infer",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 1,
+      "median_call_s": 0.0021912369999999015,
+      "rollouts_per_sec": 456.3632322747585,
+      "env_steps_per_sec": 6845.448484121378
+    },
+    {
+      "driver": "train_step",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 1,
+      "median_call_s": 0.0026727970000006707,
+      "rollouts_per_sec": 374.13989913927213,
+      "env_steps_per_sec": 5612.098487089082
+    },
+    {
+      "driver": "sim_only",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 16,
+      "median_call_s": 0.004769590999998741,
+      "rollouts_per_sec": 3354.5853302734395,
+      "env_steps_per_sec": 50318.77995410159
+    },
+    {
+      "driver": "policy_infer",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 16,
+      "median_call_s": 0.004959745000000737,
+      "rollouts_per_sec": 3225.9723030110667,
+      "env_steps_per_sec": 48389.584545166
+    },
+    {
+      "driver": "train_step",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 16,
+      "median_call_s": 0.006139270000002028,
+      "rollouts_per_sec": 2606.173046631719,
+      "env_steps_per_sec": 39092.59569947579
+    },
+    {
+      "driver": "sim_only",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 64,
+      "median_call_s": 0.012082155999998179,
+      "rollouts_per_sec": 5297.067841203974,
+      "env_steps_per_sec": 79456.01761805962
+    },
+    {
+      "driver": "policy_infer",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 64,
+      "median_call_s": 0.012435315000001168,
+      "rollouts_per_sec": 5146.632795389099,
+      "env_steps_per_sec": 77199.49193083648
+    },
+    {
+      "driver": "train_step",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 64,
+      "median_call_s": 0.014039326999998991,
+      "rollouts_per_sec": 4558.623073599226,
+      "env_steps_per_sec": 68379.34610398838
+    },
+    {
+      "driver": "sim_only",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 256,
+      "median_call_s": 0.04592955500000073,
+      "rollouts_per_sec": 5573.753109517302,
+      "env_steps_per_sec": 83606.29664275952
+    },
+    {
+      "driver": "policy_infer",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 256,
+      "median_call_s": 0.037972795999998255,
+      "rollouts_per_sec": 6741.668430210189,
+      "env_steps_per_sec": 101125.02645315284
+    },
+    {
+      "driver": "train_step",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 256,
+      "median_call_s": 0.03969335200000046,
+      "rollouts_per_sec": 6449.4427177628395,
+      "env_steps_per_sec": 96741.6407664426
+    },
+    {
+      "driver": "sim_only",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 1024,
+      "median_call_s": 0.16067218699999586,
+      "rollouts_per_sec": 6373.225006267117,
+      "env_steps_per_sec": 95598.37509400675
+    },
+    {
+      "driver": "policy_infer",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 1024,
+      "median_call_s": 0.1617601829999984,
+      "rollouts_per_sec": 6330.358812712336,
+      "env_steps_per_sec": 94955.38219068504
+    },
+    {
+      "driver": "train_step",
+      "grid_shape": [
+        10,
+        10
+      ],
+      "n_zones": 100,
+      "batch_size": 1024,
+      "median_call_s": 0.16330174200000158,
+      "rollouts_per_sec": 6270.600591633554,
+      "env_steps_per_sec": 94059.00887450331
+    }
+  ],
+  "verdict": {
+    "reference_grid_shape": [
+      10,
+      10
+    ],
+    "per_batch": {
+      "1": {
+        "sim_only_env_steps_per_sec": 7691.988178951064,
+        "policy_infer_env_steps_per_sec": 6845.448484121378,
+        "train_step_env_steps_per_sec": 5612.098487089082,
+        "infer_over_sim": 0.8899452683577673,
+        "train_over_sim": 0.7296031086535535
+      },
+      "16": {
+        "sim_only_env_steps_per_sec": 50318.77995410159,
+        "policy_infer_env_steps_per_sec": 48389.584545166,
+        "train_step_env_steps_per_sec": 39092.59569947579,
+        "infer_over_sim": 0.9616605289179246,
+        "train_over_sim": 0.7768987192283716
+      },
+      "64": {
+        "sim_only_env_steps_per_sec": 79456.01761805962,
+        "policy_infer_env_steps_per_sec": 77199.49193083648,
+        "train_step_env_steps_per_sec": 68379.34610398838,
+        "infer_over_sim": 0.9716003173218405,
+        "train_over_sim": 0.860593673756516
+      },
+      "256": {
+        "sim_only_env_steps_per_sec": 83606.29664275952,
+        "policy_infer_env_steps_per_sec": 101125.02645315284,
+        "train_step_env_steps_per_sec": 96741.6407664426,
+        "infer_over_sim": 1.209538402176201,
+        "train_over_sim": 1.157109507909541
+      },
+      "1024": {
+        "sim_only_env_steps_per_sec": 95598.37509400675,
+        "policy_infer_env_steps_per_sec": 94955.38219068504,
+        "train_step_env_steps_per_sec": 94059.00887450331,
+        "infer_over_sim": 0.9932740184894415,
+        "train_over_sim": 0.983897569200421
+      }
+    },
+    "train_step_sweet_spot_batch": 256,
+    "train_step_sweet_spot_env_steps_per_sec": 96741.6407664426
+  }
+}
